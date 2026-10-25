@@ -2,12 +2,13 @@
 
 ## Status
 
-- Stage: Task 1 (foundation and provider setup) implemented; Task 2 (database schema and access rules) is next.
+- Stage: Tasks 1 and 2 (development data model and dummy preview) implemented; independent review/QA pending.
 - Repository: `yanskfz/ngekost-jogja`, public, default branch `main`.
 - Workflow: Agent OS + Claude Code implementation after plan approval.
 - Hosting direction: Vercel first; Supabase is the recommended production data/auth/storage layer.
 - Task 1 result: Next.js 15 + TypeScript app, `lib/supabase/*` and `lib/map/*` adapters, `.env.example`, `vercel.json` (`framework: nextjs`), tests, `docs/FOUNDATION.md`. Old static demo moved to `prototype/`.
 - Task 1 follow-up: `npm audit` reported 2 findings (high/moderate) from `postcss` 8.4.31 bundled by `next@15.5.28` (latest 15.x). Fixed with an `overrides` entry (`postcss ^8.5.31`) instead of the breaking `next@16` upgrade; `npm audit` now reports 0 vulnerabilities and typecheck, tests, and build pass. Remove the override when a Next 15 release ships a patched postcss. Verification was run by the implementing agent, not an independent QA run.
+- Task 2 result: data contracts (`lib/data/types.ts`), rules for visibility/expiry/transitions (`lib/data/rules.ts`), dummy fixtures (`data/dummy-listings.ts`), read-only preview source (`lib/data/preview.ts`) rendered by `app/page.tsx`, and a dev/test-only SQLite adapter (`lib/data/dev-database.ts`, `node:sqlite`). No Supabase credentials needed; no write path in the preview. See `docs/DATA_MODEL.md`. Checks were run by the implementing agent, not independent QA.
 - Date: 2026-10-25.
 
 ## Open questions
@@ -23,7 +24,7 @@
 
 ## Next step
 
-Independent QA of Task 1 (the evidence so far is from the implementing agent) and merge of the Task 1 PR, then hand off Task 2 using dummy fixtures and local SQLite for development. Hosted database setup is a separate prerequisite before public launch.
+Independent review and QA of Tasks 1–2 (evidence so far is from the implementing agent), then merge PR #1. Task 3 (auth and submitter workspace) needs a hosted auth provider decision; do not start it before that. Hosted database setup stays a public-launch prerequisite (`docs/PUBLIC_LAUNCH_DATABASE.md`).
 
 ## Decisions
 
