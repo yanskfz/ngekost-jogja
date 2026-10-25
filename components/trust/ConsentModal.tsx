@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import { acceptSafetyConsent } from '@/app/actions';
+import { trackEvent } from '@/lib/analytics/client';
+import { viewportBucket } from '@/lib/analytics/events';
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
 
@@ -13,10 +15,18 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), summa
  */
 export function ConsentModal() {
   const [agreed, setAgreed] = useState(false);
+  const [viewport, setViewport] = useState('');
   const dialogRef = useRef<HTMLDivElement>(null);
   const checkboxRef = useRef<HTMLInputElement>(null);
+  const submitted = useRef(false);
 
   useEffect(() => {
+    setViewport(viewportBucket(window.innerWidth));
+    trackEvent('consent_shown');
+    const onPageHide = () => {
+      if (!submitted.current) trackEvent('consent_abandoned');
+    };
+    window.addEventListener('pagehide', onPageHide);
     checkboxRef.current?.focus();
     const dialog = dialogRef.current;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -49,6 +59,7 @@ export function ConsentModal() {
     document.addEventListener('focusin', onFocusIn);
     document.body.style.overflow = 'hidden';
     return () => {
+      window.removeEventListener('pagehide', onPageHide);
       document.removeEventListener('keydown', onKeyDown, true);
       document.removeEventListener('focusin', onFocusIn);
       document.body.style.overflow = '';
@@ -64,26 +75,30 @@ export function ConsentModal() {
         </div>
         <h2 id="consent-title">Jangan transfer uang sebelum lihat langsung!</h2>
         <div id="consent-desc">
-          <ul className="modal__list">
-            <li>Survei lokasi dan cocokkan dengan informasi di iklan.</li>
-            <li>Hubungi pemilik lewat WhatsApp yang tercantum di Ngekost Jogja.</li>
-            <li>Ngekost Jogja tidak meminta atau memproses pembayaran dan tidak menjamin transaksi.</li>
-          </ul>
+          <ol className="modal__list">
+            <li>Survei langsung ke lokasi.</li>
+            <li>Jangan transfer sebelum melihat langsung.</li>
+            <li>Hubungi hanya lewat kontak yang tertera di Ngekost Jogja.</li>
+          </ol>
         </div>
         <details className="modal__more">
           <summary>Baca panduan lengkap</summary>
           <ul>
+            <li>Ngekost Jogja tidak meminta atau memproses pembayaran dan tidak menjamin transaksi. Listing yang ditinjau admin bukan jaminan keamanan.</li>
             <li>Jangan membayar deposit, biaya booking, atau biaya admin sebelum melihat kamar atau rumah langsung.</li>
-            <li>Verifikasi pemilik atau makelar secara mandiri; listing yang disetujui admin bukan jaminan keamanan.</li>
-            <li>Pastikan nomor WhatsApp yang kamu hubungi sama dengan yang tercantum di listing.</li>
-            <li>Ngekost Jogja tidak pernah meminta transfer, deposit, atau data pembayaran darimu.</li>
+            <li>Verifikasi pemilik atau agen secara mandiri dan pastikan nomor WhatsApp sama dengan yang tertera di listing.</li>
+            <li>Curiga foto dipakai ulang, harga jauh di bawah pasaran, atau diminta DP sebelum survei? Laporkan listing lewat tombol Laporkan di halaman detail.</li>
           </ul>
         </details>
-        <form action={acceptSafetyConsent}>
+        <form action={acceptSafetyConsent} onSubmit={() => { submitted.current = true; }}>
+          <input type="hidden" name="viewport" value={viewport} />
           <label className="modal__check">
             <input ref={checkboxRef} type="checkbox" name="agree" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
             <span>Saya paham dan akan verifikasi langsung sebelum membayar.</span>
           </label>
+          <noscript>
+            <p className="modal__nojs">Aktifkan JavaScript di browser untuk melanjutkan: kotak persetujuan ini membutuhkannya.</p>
+          </noscript>
           <button type="submit" className="button modal__submit" disabled={!agreed}>
             Saya paham, lanjut melihat listing
           </button>

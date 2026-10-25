@@ -45,3 +45,13 @@ The preview stores safety consent in an HttpOnly cookie and "signs in" with a de
 - Record safety consent with timestamp, consent text version, and account or session identifier on the server.
 - Replace the demo cookie with real authentication; enforce the anonymous limit (3 complete listings, remaining listings locked) in the query layer or row-level policy, never only in the UI.
 - Keep the contact-point warning at the WhatsApp action even after consent.
+
+## Trust and discovery additions (go-live gate)
+
+- Provision `LOCATION_JITTER_SECRET` (server-only, per environment, never committed). The development fallback must not be used with real listings.
+- Store exact address and coordinates only in private columns/tables; expose only the approximate point and neighborhood label through the public read model, and cover that with a test against the hosted schema.
+- Make reports durable and hide the reported listing for everyone immediately; send an email notification to the admin's Gmail for every new report (response SLA: as soon as possible, reviewed by the admin), deduplicate reports per reporter, listing, and reason window, and keep an audit event.
+- Make `reconfirm` idempotent so a retry cannot extend expiry twice.
+- Add near-duplicate photo detection or mandatory admin review of the three photos before approval.
+- Replace the stdout event log with a reviewed analytics sink, define retention, and keep events free of personal data.
+- Confirm which fields may appear in the public evidence row; every badge must map to a stored record.

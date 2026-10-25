@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { demoSignIn } from '@/app/actions';
+import { TrackMount } from '@/components/trust/TrackMount';
 import { Header } from '@/components/site/Header';
 import { isDemoSignedIn } from '@/lib/auth/demo-session';
 
@@ -14,6 +15,7 @@ export default async function SignInPage() {
     <>
       <Header />
       <main className="detail">
+        <TrackMount event="signup_started" />
         <h1>Masuk atau daftar</h1>
         <p className="notice" role="note">
           <strong>Mode demo.</strong> Preview ini belum punya akun sungguhan. Tombol di bawah hanya membuka semua listing contoh di browser ini;

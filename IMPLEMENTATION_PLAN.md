@@ -1,5 +1,24 @@
 # Ngekost Jogja — Agent OS Implementation Plan
 
+## Status (2026-10-25)
+
+Task text and acceptance criteria below are unchanged. This table records what exists on `main` and on the branch `claude/trust-discovery-iteration` (verified by the implementing agent; QA independence is noted separately). Everything runs on the dummy/read-only Vercel preview; nothing is persistent.
+
+| Task | Status | What exists / what is missing |
+| --- | --- | --- |
+| 1 Foundation and provider setup | Done | Merged (PR #1). Independent static review and QA passed. |
+| 2 Development data model and public database notes | Done | Merged (PR #1). Dummy fixtures, dev SQLite adapter, `docs/DATA_MODEL.md`, `docs/PUBLIC_LAUNCH_DATABASE.md`. |
+| 3 Authentication and submitter workspace | Not started | Only a demo sign-in cookie exists (not authentication). Waits for the hosted auth/database decision. |
+| 4 Public discovery experience | Partial (preview) | Done: mobile-first search, filters (type, area, price, facilities, availability), sorting, detail page, WhatsApp and survey CTA, anti-transfer warning, 3-of-5 anonymous gate; only approved, non-expired listings are public. Missing: map/list switching (the map is an approximate-area preview on the detail page only). |
+| 5 Image, location, and listing validation | Partial | Done: three-photo rules and guidance (`lib/validation/photos.ts`, structural checks only), approximate public location. Missing: the submission form, uploads and storage, consent capture, per-field validation of a submission. |
+| 6 Admin moderation and trust workflow | Not started | Moderation rules and audit events exist only in the dev SQLite adapter (no UI, no auth). Reports hide a listing only in the reporter's browser. |
+| 7 CSV bulk import | Not started | |
+| 8 Safety, privacy, and abuse controls | Partial | Done: warning at discovery, detail, and the contact action; report flow (preview model) with the five reasons; consent version; minimized public contact data. Missing: correction/removal request path, rate limiting (only a honeypot and length limits), durable reports. |
+| 9 Quality gates | Partial | 118 unit tests and 284 E2E checks; responsive checks at 320–1920 px; axe WCAG A/AA. Results live in `design-qa.md` (not `docs/TEST-RESULTS.md`). Cross-browser and screen-reader checks are blocked in the sandbox. |
+| 10 Review and deployment handoff | Not started | Independent QA of PR #2 and static review of Tasks 1–2 happened; there is no independent code review of the later work and no documented deployment verification by a separate role yet. |
+
+Work outside the original task list: the Option 3 design implementation, the consent modal, and the trust and discovery additions (`docs/TRUST_AND_DISCOVERY.md`) were requested by the Product Owner through design handoffs rather than this plan; they overlap Tasks 4, 5, and 8 as shown above.
+
 ## Scope
 
 ### In scope
@@ -190,3 +209,5 @@ Outside blockers:
 - Vercel preview verification passes read-only.
 - Remaining limitations and production blockers are documented.
 - Claude Code does not implement beyond this plan without a new decision in BRIEF.md.
+
+Current state against this list: BRIEF.md and this plan now describe the shipped scope; Agent OS configuration is enabled; Tasks 1–8 are **not** all implemented (see Status); independent code review, a separately run deployment verification, and the public-launch items are still open. The Product Owner's design handoffs are the recorded decisions for the work done outside this plan.

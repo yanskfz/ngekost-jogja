@@ -10,7 +10,8 @@
 - Task 1 follow-up: `npm audit` reported 2 findings (high/moderate) from `postcss` 8.4.31 bundled by `next@15.5.28` (latest 15.x). Fixed with an `overrides` entry (`postcss ^8.5.31`) instead of the breaking `next@16` upgrade; `npm audit` now reports 0 vulnerabilities and typecheck, tests, and build pass. Remove the override when a Next 15 release ships a patched postcss. Verification was run by the implementing agent, not an independent QA run.
 - Task 2 result: data contracts (`lib/data/types.ts`), rules for visibility/expiry/transitions (`lib/data/rules.ts`), dummy fixtures (`data/dummy-listings.ts`), read-only preview source (`lib/data/preview.ts`) rendered by `app/page.tsx`, and a dev/test-only SQLite adapter (`lib/data/dev-database.ts`, `node:sqlite`). No Supabase credentials needed; no write path in the preview. See `docs/DATA_MODEL.md`. Checks were run by the implementing agent, not independent QA.
 - Review fix (P1): declared Node.js `>=22.13.0` (`engines`, `.nvmrc`, `.npmrc` `engine-strict`) because `node:sqlite` is unavailable unflagged on older Node; documented in README and docs. Re-run by the implementing agent: typecheck, tests, build, audit.
-- Design handoff: `docs/DESIGN_OPTION_3_HANDOFF.md` (iteration 2 hard requirements, responsive visual acceptance, QA workflow) and the Option 3 reference are the source of truth. PR #2 implements Option 3, the blocking consent modal, the server-side 3-of-5 anonymous gate with demo unlock, and the sliced-asset pipeline (no generated images). Visual fixes after the QA review: listing cards no longer clip or split prices at 320–1440 px, and category/trust/warning/modal assets are visually separated from their parent surfaces. `design-qa.md` lists 133 PASS, 0 FAIL, 3 BLOCKED (cross-browser, screen reader, independent QA) with severities and 11 screenshots in `docs/qa-screenshots/`; the implementing-agent run was independently repeated in a clean worktree: build, typecheck, 28/28 unit tests, audit 0 vulnerabilities, and E2E exit 0 with 133 PASS/0 FAIL/3 BLOCKED, repeated twice. The remaining blocks are Firefox/WebKit and screen-reader environment limits; visual fidelity approval remains with the product owner. Lighthouse mobile 91 (consented). Demo sign-in is not real authentication. Not merged and not deployed by Claude Code; product-owner visual approval comes next.
+- Design handoff: `docs/DESIGN_OPTION_3_HANDOFF.md` (iteration 2 hard requirements, responsive visual acceptance, QA workflow) and the Option 3 reference are the source of truth. PR #2 implements Option 3, the blocking consent modal, the server-side 3-of-5 anonymous gate with demo unlock, and the sliced-asset pipeline (no generated images). Visual fixes after the QA review: listing cards no longer clip or split prices at 320–1440 px, and category/trust/warning/modal assets are visually separated from their parent surfaces. `design-qa.md` lists 133 PASS, 0 FAIL, 3 BLOCKED (cross-browser, screen reader, independent QA) with severities and 11 screenshots in `docs/qa-screenshots/`; the implementing-agent run was independently repeated in a clean worktree: build, typecheck, 28/28 unit tests, audit 0 vulnerabilities, and E2E exit 0 with 133 PASS/0 FAIL/3 BLOCKED, repeated twice. The remaining blocks are Firefox/WebKit and screen-reader environment limits; visual fidelity approval remains with the product owner. Lighthouse mobile 91 (consented). Demo sign-in is not real authentication. PR #2 was merged into `main` (merge commit `71c7627`, 2026-10-25) by Claude Code at the Product Owner's instruction, using a merge commit rather than a squash; it was not deployed by Claude Code.
+- Trust and discovery iteration (branch `claude/trust-discovery-iteration`, based on the PR #2 head; not merged, not deployed): all nine Product Owner-approved UI additions are implemented on the dummy/read-only preview — trust evidence badges, last-confirmed and availability rows, approximate map with Open in Maps, role badge and broker-fee transparency, report flow, "Jadwalkan survei" template, expanded filters and sorting, three-photo guidance, and a concise consent modal (consent version `2026-10-v2`). Details, assumptions, and what is not built: `docs/TRUST_AND_DISCOVERY.md`; funnel events: `docs/METRICS.md`; results: `design-qa.md`. Verification was run by the implementing agent, not independent QA.
 - Date: 2026-10-25.
 
 ## Open questions
@@ -21,12 +22,24 @@
 - [x] Expiry — hide automatically after 2 months; allow reconfirmation.
 - [x] Admin auth — start with one admin account using email plus WhatsApp reachability verification.
 - [x] WhatsApp verification scope — admin-supervised manual reachability check for MVP; automated OTP is deferred.
+- [x] Report response SLA — Product Owner decision (2026-10-25): "as soon as possible" with an email notification to the admin's Gmail on every new report; the admin reviews reports. No numeric hour value; the preview states none because reports are not durable and no notification exists yet. The notification is a public-launch requirement (needs durable reports and an email sender); see `docs/PUBLIC_LAUNCH_DATABASE.md`.
+- [ ] Broker "relationship" disclosure — the design says brokers must disclose any fee or relationship; only the fee (none / disclosed amount / undisclosed) is modelled, and the Product Owner has decided that "no fee" and the role are not shown (see Decisions).
+- [x] Role filter — removed (Product Owner decision).
+- [x] Dummy photos — three photos per dummy listing are crops of one reference image (F1); accepted as labelled samples (Product Owner decision). Real distinct photos are still needed before any real listing.
+- [x] Short availability wording on cards — Product Owner decision (2026-10-25): unknown availability reads "Tanya dulu" on one-line cards (the approved "Ketersediaan belum dikonfirmasi" does not fit on phones up to 375 px). The detail page keeps the full wording.
+- [ ] Price bands and sort options — below Rp 1 jt / Rp 1–2 jt / above Rp 2 jt per month (yearly kontrakan converted to monthly) and the four sort options were chosen by the implementer; confirm or replace.
+- [ ] Availability `unknown` on approved listings — allowed in the dummy data (labelled "Ketersediaan belum dikonfirmasi"); decide whether admin approval should require a known value.
+- [ ] Homepage copy — hero and trust-card wording were changed away from "dari pemilik langsung" and "terverifikasi" (the design flags both); confirm the new wording.
+- [ ] `LOCATION_JITTER_SECRET` — must be provisioned per environment before any real listing; the development fallback is public.
+- [ ] Analytics sink — preview events go to stdout only; choose a production sink, retention, and analytics consent.
 - [ ] Hosted production database/provider — must be selected and configured before public launch.
 - [ ] Map tile provider — the default public OSM tile server is development-only; choose a policy-compliant provider before production.
 
 ## Next step
 
-Complete the independent visual/code review and QA gate for PR #2, fix any P1/P2 findings, obtain product-owner visual approval, then resolve merge status and merge. Task 3 (auth and submitter workspace) needs a hosted auth provider decision; do not start it before that. Hosted database setup stays a public-launch prerequisite (`docs/PUBLIC_LAUNCH_DATABASE.md`).
+1. Independent review and QA of the trust and discovery branch (the 253 automated checks are the implementer's; cross-browser and screen-reader checks are BLOCKED here), then Product Owner visual approval of the new screens.
+2. Resolve the open questions above, then open the pull request for `claude/trust-discovery-iteration` (PR #2 is already merged and this branch is synced with `main`). Do not merge or deploy before visual approval and QA pass.
+3. Task 3 (auth and submitter workspace) still needs a hosted auth provider decision. Hosted database setup stays a public-launch prerequisite (`docs/PUBLIC_LAUNCH_DATABASE.md`).
 
 ## Decisions
 
@@ -45,6 +58,15 @@ Complete the independent visual/code review and QA gate for PR #2, fix any P1/P2
 - 2026-10-25 — Vercel preview uses non-sensitive dummy listings and read-only behavior until a hosted production database is configured.
 - 2026-10-25 — SQLite is for local development/tests only; a persistent hosted database is required before public submissions or public moderation.
 - 2026-10-25 — Iteration 2 requires a blocking anti-scam consent modal before browsing, anonymous users see exactly 3 of 5 public listings until signup/login, and Claude Code may only slice/polish committed image references; it may not generate new images.
+
+- 2026-10-25 — Public listing output never carries exact coordinates or the exact address; the map shows a point 300–500 m from the real location, derived with a server-side secret, plus a neighborhood label. User geolocation is optional, one-shot, in-memory, and never required for browsing.
+- 2026-10-25 — Trust badges may only state checks backed by a stored record, are never worded as a safety guarantee, and show missing checks as "belum" on the detail page.
+- 2026-10-25 — Roles are labelled "Pemilik" and "Agen"; broker fees are stated as declared and never collected by Ngekost Jogja.
+- 2026-10-25 — The anonymous 3-of-5 limit is a fixed launch rule. Consent completion, abandonment, and sign-up conversion are measured; safety consent is not A/B tested yet.
+- 2026-10-25 — The role filter ("Pemasang iklan") is removed. Dummy listing photos are accepted as labelled sample crops. On list cards, availability and the confirmation age share one line.
+- 2026-10-25 — Broker role and fee are shown only when there is a fee to flag: "no broker fee" and owner listings display nothing, not even the role. A fee that is not stated is displayed ("belum dicantumkan"). Product Owner decision; supersedes the "role badge on every card" part of addition #4.
+- 2026-10-25 — List cards show the address on one line (kecamatan and region, ellipsis when too long); the full neighborhood label stays on the detail page. Requested by the Product Owner during the first visual review.
+- 2026-10-25 — The consent modal wording changed, so the consent version is `2026-10-v2` and earlier consent no longer counts.
 
 ## Requirements
 
@@ -167,6 +189,23 @@ The product must:
 - status: open | investigating | resolved | dismissed
 - created_at
 - resolved_at
+
+## Acceptance criteria: trust and discovery additions
+
+Written after implementation from the Product Owner's approvals and decisions (`docs/TRUST_AND_DISCOVERY.md` holds the detail and the assumptions). Each criterion is covered by named checks in `design-qa.md`. All of this applies to the dummy/read-only preview only.
+
+1. **Trust evidence.** Cards show only checks that a stored record supports (three photos, WhatsApp reachable, verified email, admin review, recorded permission). The detail page lists all five and marks missing ones "belum", and states that the evidence is not a safety guarantee. No broader claim ("terverifikasi", "dari pemilik langsung") is made in copy.
+2. **Last confirmed and availability.** Cards show availability and the age of the last confirmation on one line; the detail page shows the confirmation date, the expiry date, and the full availability label. Availability `unknown` and `unavailable` never read as available, and the "masih tersedia" filter excludes them.
+3. **Approximate map.** The public location is 300–500 m from the real point and deterministic per listing; exact coordinates and the exact address never appear in any response (HTML, RSC payload, links). The map is an area preview, the OpenStreetMap embed loads only after a tap, and "Open in Maps" links use the approximate point. User geolocation is optional, requested only after a tap, used once, kept in memory, never sent, and denial or absence of geolocation never blocks browsing or area search.
+4. **Role and broker fee.** The role label and the fee note appear together, only for an agen listing whose fee is disclosed or not stated; owner listings and agen listings with no fee show neither. Ngekost Jogja states it does not collect the fee.
+5. **Report listing.** A visitor can report a visible listing with one of five reasons plus an optional detail and contact; input is validated server-side; reporting hides the listing from that visitor immediately; the confirmation is shown only for a report the visitor actually filed; locked, unknown, and malformed listing ids cannot be reported. The demo states that nothing is sent or stored.
+6. **Survey template.** "Jadwalkan survei" opens WhatsApp with a prefilled message (listing title, contact name, neighborhood) that proposes a visit and says no payment is made beforehand; the message never mentions amounts, deposits, or bank details; it appears only when contact consent exists, and only after the anti-scam warning.
+7. **Filters and sorting.** Filters: type, area, price band (monthly equivalent), facilities, availability. Sorting: standard, most recently confirmed, lowest price, highest price, and an optional nearest sort. They work without JavaScript, invalid parameters are ignored, and no filter, sort, or search can surface a listing the anonymous 3-of-5 gate withholds.
+8. **Photo guidance.** The detail page tells visitors what the three photos should show and the rule that they must differ; submission validation rejects anything but exactly three distinct files of allowed type and size. The dummy gallery says its photos are crops of one example image. (Near-duplicate detection is not built.)
+9. **Consent modal.** Three short safety actions, an unchecked checkbox, an action disabled until checked, no close control, focus trapped, no bypass by Escape, backdrop, refresh, direct URL, forged or outdated cookie; the server rechecks the checkbox. Without JavaScript the modal explains that JavaScript is required. Consent version `2026-10-v2`.
+10. **Measurement.** Six anonymous funnel events (`docs/METRICS.md`); no personal data; skipped when Do Not Track or Global Privacy Control is on. No A/B test of the consent modal.
+
+Not in scope here and not built: durable reports and an admin response SLA, near-duplicate photo detection, rate limiting, filter-to-detail and WhatsApp click metrics, hosted auth, storage, and database.
 
 ## QA requirements for the current design iteration
 

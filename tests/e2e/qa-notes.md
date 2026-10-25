@@ -1,3 +1,72 @@
+# Trust and Discovery iteration (branch `claude/trust-discovery-iteration`)
+
+## Commands run
+`npm run typecheck`, `npm test` (unit), `npm run build`, `npm audit`, `npm run qa:e2e` (Playwright + axe-core, Chromium), plus three manual Lighthouse mobile runs. Exact counts are in the summary at the top of this file.
+
+## Requirements preflight
+Read first: `Ngekost-Jogja-Trust-and-Discovery-System-Design.docx` and `artifact.md` (Google Drive, not in the repository), `BRIEF.md`, `docs/DESIGN_OPTION_3_HANDOFF.md`, `CLAUDE.md`. Applied the Karpathy rules (assumptions stated, smallest testable change, verifiable result) and Ponytail rules (callers, security boundaries, missing tests, skipped items stated).
+Acceptance criteria frozen before coding: the nine approved additions render and behave as described in `docs/TRUST_AND_DISCOVERY.md`; exact coordinates and the private address never reach the browser; location is optional and one-shot; the 3-of-5 gate still holds under every new filter, sort, report, and direct URL; no new imagery; the preview stays read-only.
+Assumptions and open decisions are listed in `docs/TRUST_AND_DISCOVERY.md` and `BRIEF.md`.
+
+## Ponytail-style trace
+Callers of the changed code: `toPublicListing` (every public read path: preview cards, detail, dev adapter), `listPreviewCards` (home, detail, report page, report action, QA fixtures), `gateListings`/`canViewListing` (home, detail, report page and action), `ListingCard` (now rendered from a client component, so nothing in it may import Node-only code; `lib/data/constants.ts` and `lib/location/geo.ts` were split out for that), `acceptSafetyConsent`/`demoSignIn` (now also emit server-side events). Security boundaries re-checked: consent gate (version bump invalidates v1 and forged cookies; E2E covers both), anonymous gate (filters, sort, search, report, and report-page URLs cannot surface or touch locked listings), report action (id allowlist, public-and-viewable check, honeypot, length limits), events endpoint (allowlist, size limit, no body logged beyond the name and a viewport bucket).
+
+## Bug reproduction log (this iteration)
+| Bug | Severity | How found | Regression test (kept) | Before fix | After fix | Residual risk |
+| --- | --- | --- | --- | --- | --- | --- |
+| Browsers without a geolocation object: the "nearest" button threw instead of showing a message (`'geolocation' in navigator` was true for an undefined value) | P1 | New negative test written first | `Location unsupported: a clear message and the list is unaffected` | FAIL | PASS | Real browsers vary; only a stubbed environment was tested. |
+| Listing photos carried the mockup's heart button (a white disc) baked into the image corner, so the detail gallery showed a fake control | P1 | Visual audit of the detail screenshot (the DOM checks and earlier QA did not catch it) | `Photo assets contain no baked-in UI` (counts near-white pixels in each photo's top-right corner) | White share 0.37 in four of six photos | 0 in all six (re-cropped; manifest updated) | The check only looks at one corner; other baked-in UI would need its own check. |
+| Favorite button persisted check raced hydration after the list became a client component | P3 | E2E failure | existing `Favorite persists...` now waits for the stored state | FAIL (test timing) | PASS | Test-only. |
+| Report-action 404 probes were attributed to the tracked page and polluted console-error tracking | P3 | E2E failure | 404 checks use untracked requests | FAIL (test setup) | PASS | Test-only. |
+Earlier tests were kept; none was removed or weakened.
+
+## Product Owner decisions after QA: role filter removed, one-line status, dummy-photo note accepted
+Tests were written first. Before the change: 11 unit tests failed (`confirmedShort` and the short availability labels did not exist; the role parameter still filtered), and the type check failed on the new tests. After: 118 unit tests and 284 E2E checks pass. New regression coverage: leftover `?role=` is ignored and shows no active-filter badge; no "Pemasang iklan" control exists; the status line is exactly one line on the three real cards at 360, 375, and 390 px and on all 10 stress cards; the full wording stays in the tooltip and screen-reader text; unknown availability never reads as "Tersedia".
+A measurement during implementation changed the design: with "Dikonfirmasi" in the line (200-236 px) and even with the approved label "Ketersediaan belum dikonfirmasi" alone (193 px), the card body (185 px at 390 px) is too narrow, and the first implementation with "Belum dikonfirmasi" still clipped by 1 px at 390 px and by about 8 px at 375 px (caught by the new E2E check). The card therefore uses "Tanya dulu" for unknown availability. Residual risk: the short wording is the implementer's choice.
+
+## Independent QA findings F1-F6 and the role/fee decision: reproduction log
+Method: expectations were written first and the suite was run before any fix. Result before the fix: 5 FAIL (role/fee rule on cards and detail for owner and zero-fee agen listings, F3) and the runner stopped on a timeout waiting for the F1 gallery note, so the F2 and F4-F6 checks had not run yet (the `brokerFeeNote` unit test also failed). After the fix: all of them PASS.
+
+| Finding | Severity | Regression tests kept | Before | After | Residual risk |
+| --- | --- | --- | --- | --- | --- |
+| F1 three photos are crops of one image | P2 | `F1: the detail gallery says the sample photos are crops...` | FAIL (no note; runner timeout) | PASS | Only labelled, not solved: real distinct photos are still needed. |
+| F2 consent unusable without JS | P3 | two `F2:` checks (notice shown without JS, absent with JS) | not reached | PASS | The action stays disabled by design, so such visitors still cannot proceed. |
+| F3 confirmation without a report | P3 | `F3: ?status=ok ... shows no confirmation`; honeypot check rewritten | FAIL | PASS | A visitor can still reload the confirmation of their own report (intended). |
+| F4 heading order | P3 | `F4/F5: heading order and landmarks are valid on` six pages (axe best-practice rules, which the WCAG-tag runs elsewhere do not include) | not reached | PASS | Only the listed pages. |
+| F5 404 landmark | P3 | the same axe rules on a 404 page plus a status/`h1`/link check | not reached | PASS | None known. |
+| F6 inert button without JS | P3 | two `F6:` checks (no button without JS, appears with JS) | not reached | PASS | A brief delay before the control appears; Lighthouse CLS stayed 0. |
+| F7 malformed URL 502 | - | none (platform behaviour, same on non-existent routes) | - | - | Not ours to fix. |
+| Role/fee rule (Product Owner) | P1 | four `Role/fee:` checks plus owner/detail checks and unit tests | FAIL | PASS | The role filter still exists (open question). |
+
+One test of mine produced a false positive during this work: the locked-page check searched for the word "laporkan", which now also appears in the generic 404 copy ("dilaporkan") that Next includes in every page payload. It was narrowed to the real report link and label; the locked listing's title, price, and contact data are still asserted absent.
+
+Lighthouse after these changes (homepage, consented, single localhost run): Performance 88, Accessibility 100, Best Practices 96; LCP 2.6 s, CLS 0, TBT 390 ms.
+
+## Change request during visual review: one-line card address
+Product Owner asked that list-card addresses be limited to one line with an ellipsis and show the kecamatan and region. Tests were written first and failed (the one-line address element did not exist, so the E2E runner timed out on it; 12 unit cases failed because `compactLocation` was missing). After the change: 12 new unit cases and 8 new E2E checks pass (kecamatan text, one line with an ellipsis on the real and the stress cards, tooltip and screen-reader text keep the full label, the detail page keeps the full label, the 160-character address becomes "Kec. Depok, Kab. Sleman"). The card geometry check no longer treats the intentional ellipsis as overflow; every other overflow check is unchanged. Screenshot: `docs/qa-screenshots/16-stress-cards-address-390.png`.
+
+## Lighthouse (mobile, localhost production build, single runs)
+- Homepage, consented: Performance 87, Accessibility 100, Best Practices 96; LCP 2.7 s, CLS 0, TBT 380 ms, 200 KiB. Down from 91 before this iteration (the card list became a client component and cards carry more markup); still above the 85 target, with little margin.
+- Detail page (`/listing/lst-2`): Performance 99, Accessibility 100, Best Practices 96.
+- First-visit modal: Performance 98, Accessibility 100, Best Practices 96.
+These are not Vercel measurements.
+
+## Visual audit
+11 new or refreshed screenshots in `docs/qa-screenshots/` (`10-` to `15-`, plus the earlier set) were inspected by the implementing agent: evidence rows and fee notes fit inside cards at 390 px, the modal is concise, the filter panel, report form, map section, and detail status/evidence panels render without clipping. The audit also found the baked-in heart overlay (above). Fidelity to a reference design for these new screens does not exist (they are new), so visual approval is the Product Owner's.
+
+## Not tested / residual risks
+- Only Chromium; no Firefox/WebKit; no screen reader. An accessibility-tree smoke and axe WCAG A/AA on the new pages are the only a11y automation.
+- Real geolocation accuracy and permission prompts differ per browser; only the granted, denied, and unsupported paths in Chromium were exercised.
+- The OpenStreetMap embed was exercised against a stub (the sandbox should not depend on a third party); the real embed's rendering, cookies, and policy compliance are untested. The public OSM tile/embed usage policy is still an open question in `BRIEF.md`.
+- Jitter quality was tested for distance and determinism, not against a determined adversary; the development secret is public.
+- Events are logged to stdout only; counts are not durable and were not reconciled against a dashboard.
+- The report flow is a per-browser demo; durability, SLA, and admin review are not built.
+- The nine additions were not independently QA'd; this report is the implementing agent's.
+
+---
+
+# Previous iteration notes (PR #2)
+
 
 ## Commands run
 `npm run typecheck`, `npm test` (28 unit tests), `npm run build`, `npm run qa:e2e`, `npm audit` (0 vulnerabilities).
