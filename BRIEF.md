@@ -26,7 +26,7 @@
 
 ## Next step
 
-Independent review and QA of Tasks 1–2 (evidence so far is from the implementing agent), then merge PR #1. Task 3 (auth and submitter workspace) needs a hosted auth provider decision; do not start it before that. Hosted database setup stays a public-launch prerequisite (`docs/PUBLIC_LAUNCH_DATABASE.md`).
+Complete the independent visual/code review and QA gate for PR #2, fix any P1/P2 findings, obtain product-owner visual approval, then resolve merge status and merge. Task 3 (auth and submitter workspace) needs a hosted auth provider decision; do not start it before that. Hosted database setup stays a public-launch prerequisite (`docs/PUBLIC_LAUNCH_DATABASE.md`).
 
 ## Decisions
 
@@ -167,6 +167,15 @@ The product must:
 - status: open | investigating | resolved | dismissed
 - created_at
 - resolved_at
+
+## QA requirements for the current design iteration
+
+- Requirements preflight must happen before E2E: read this brief and `docs/DESIGN_OPTION_3_HANDOFF.md`, state assumptions, and freeze acceptance criteria.
+- QA must apply Karpathy guidelines and Ponytail review principles; the implementer report alone is not independent QA evidence.
+- E2E must cover happy path, edge cases, and negative/security cases, including consent bypass attempts, the 3-of-5 listing gate, direct URLs, query/client-state bypasses, locked-data leakage, non-public listings, search/filter empty states, long content, missing optional data, JS-disabled behavior, and required responsive viewports.
+- Visual QA must capture the modal, consented homepage, category/trust assets, listing section, detail, locked gate, and demo-unlocked state. DOM overflow checks alone do not establish visual pass.
+- Asset acceptance: no unintended color collision, overlap, clipping, or unclear boundary between a sliced asset and its parent surface. Listing cards must not clip price, metadata, CTA, or image at mobile width.
+- Every scenario is recorded as PASS, FAIL, or BLOCKED with evidence and severity/priority. P0 means security/data exposure or app unavailable; P1 means core journey broken or content clipped; P2 means meaningful visual/accessibility/coverage issue; P3 is polish.
 
 ## Done when
 
