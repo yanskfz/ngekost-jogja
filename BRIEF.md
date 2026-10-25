@@ -2,7 +2,7 @@
 
 ## Status
 
-- Stage: Tasks 1 and 2 (development data model and dummy preview) implemented; independent review/QA pending.
+- Stage: Tasks 1 and 2 implemented, merged to `main`, and deployed to Vercel as a dummy/read-only preview. Option 3 visual direction is approved for the next implementation iteration.
 - Repository: `yanskfz/ngekost-jogja`, public, default branch `main`.
 - Workflow: Agent OS + Claude Code implementation after plan approval.
 - Hosting direction: Vercel first; Supabase is the recommended production data/auth/storage layer.
@@ -10,6 +10,7 @@
 - Task 1 follow-up: `npm audit` reported 2 findings (high/moderate) from `postcss` 8.4.31 bundled by `next@15.5.28` (latest 15.x). Fixed with an `overrides` entry (`postcss ^8.5.31`) instead of the breaking `next@16` upgrade; `npm audit` now reports 0 vulnerabilities and typecheck, tests, and build pass. Remove the override when a Next 15 release ships a patched postcss. Verification was run by the implementing agent, not an independent QA run.
 - Task 2 result: data contracts (`lib/data/types.ts`), rules for visibility/expiry/transitions (`lib/data/rules.ts`), dummy fixtures (`data/dummy-listings.ts`), read-only preview source (`lib/data/preview.ts`) rendered by `app/page.tsx`, and a dev/test-only SQLite adapter (`lib/data/dev-database.ts`, `node:sqlite`). No Supabase credentials needed; no write path in the preview. See `docs/DATA_MODEL.md`. Checks were run by the implementing agent, not independent QA.
 - Review fix (P1): declared Node.js `>=22.13.0` (`engines`, `.nvmrc`, `.npmrc` `engine-strict`) because `node:sqlite` is unavailable unflagged on older Node; documented in README and docs. Re-run by the implementing agent: typecheck, tests, build, audit.
+- Design handoff: `docs/DESIGN_OPTION_3_HANDOFF.md` and the committed Option 3 visual reference are the source of truth for the next Claude Code iteration. UI implementation and E2E QA are still pending.
 - Date: 2026-10-25.
 
 ## Open questions
