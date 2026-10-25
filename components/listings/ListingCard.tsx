@@ -9,7 +9,8 @@ import { areaLabel, type ListingCardData } from '@/lib/search/listings';
 
 export function ListingCard({ listing, priority = false, distanceLabel }: { listing: ListingCardData; priority?: boolean; distanceLabel?: string }) {
   const photo = listingPhoto(listing.type, 1);
-  const fee = listing.role === 'broker' ? brokerFeeNote(listing.role, listing.broker_fee_status, listing.broker_fee_amount) : null;
+  // The role badge and fee line only appear together, and only when there is a fee (or an unknown fee) to flag.
+  const fee = brokerFeeNote(listing.role, listing.broker_fee_status, listing.broker_fee_amount);
   const availabilityClass = listing.availability === 'available' || listing.availability === 'limited' ? 'ok' : 'muted';
   return (
     <li className="card" data-testid="listing-card" data-listing-id={listing.id}>
@@ -29,7 +30,7 @@ export function ListingCard({ listing, priority = false, distanceLabel }: { list
         <div className="card__body">
           <p className="card__meta">
             <span className={`tag tag--${listing.type}`}>{listing.type === 'kost' ? 'Kost' : 'Kontrakan'}</span>
-            <span className={`tag tag--role tag--${listing.role}`}>{ROLE_LABEL[listing.role]}</span>
+            {fee ? <span className={`tag tag--role tag--${listing.role}`}>{ROLE_LABEL[listing.role]}</span> : null}
             <span className="card__area">
               <MapPin size={14} aria-hidden="true" /> {areaLabel(listing.area)}
             </span>

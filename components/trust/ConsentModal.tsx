@@ -96,6 +96,9 @@ export function ConsentModal() {
             <input ref={checkboxRef} type="checkbox" name="agree" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
             <span>Saya paham dan akan verifikasi langsung sebelum membayar.</span>
           </label>
+          <noscript>
+            <p className="modal__nojs">Aktifkan JavaScript di browser untuk melanjutkan: kotak persetujuan ini membutuhkannya.</p>
+          </noscript>
           <button type="submit" className="button modal__submit" disabled={!agreed}>
             Saya paham, lanjut melihat listing
           </button>

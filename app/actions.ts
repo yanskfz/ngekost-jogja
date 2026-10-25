@@ -48,8 +48,8 @@ export async function submitReport(formData: FormData): Promise<void> {
   if (!isListingId(id)) redirect('/');
   const result = validateReport(formData);
   if (!result.ok) {
-    // A filled honeypot gets a normal-looking confirmation and no effect, so bots learn nothing.
-    redirect(`/listing/${id}/laporkan?${result.code === 'spam' ? 'status=ok' : `error=${result.code}`}`);
+    // A filled honeypot is dropped without any effect or success message.
+    redirect(`/listing/${id}/laporkan${result.code === 'spam' ? '' : `?error=${result.code}`}`);
   }
   const reported = await getReportedIds();
   const visible = listPreviewCards(new Date(), reported);

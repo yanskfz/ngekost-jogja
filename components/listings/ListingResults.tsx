@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Crosshair, X } from 'lucide-react';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { distanceMeters, type LatLng } from '@/lib/location/geo';
@@ -26,6 +26,9 @@ function formatKm(meters: number): string {
 export function ListingResults({ cards }: { cards: ListingCardData[] }) {
   const [status, setStatus] = useState<Status>('idle');
   const [here, setHere] = useState<LatLng | null>(null);
+  // The control is rendered only after hydration, so without JavaScript there is no button that does nothing.
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
 
   function locate() {
     if (!navigator.geolocation?.getCurrentPosition) return setStatus('unavailable');
@@ -50,6 +53,7 @@ export function ListingResults({ cards }: { cards: ListingCardData[] }) {
 
   return (
     <>
+      {ready ? (
       <div className="nearby">
         {here ? (
           <button type="button" className="nearby__btn" onClick={clear}>
@@ -65,6 +69,7 @@ export function ListingResults({ cards }: { cards: ListingCardData[] }) {
           {status === 'ok' ? 'Diurutkan dari yang terdekat (perkiraan).' : status !== 'idle' ? STATUS_TEXT[status] : ''}
         </p>
       </div>
+      ) : null}
       <ul className="cards">
         {rows.map(({ card, meters }, i) => (
           <ListingCard key={card.id} listing={card} priority={i === 0} distanceLabel={meters === null ? undefined : `± ${formatKm(meters)} dari lokasimu`} />

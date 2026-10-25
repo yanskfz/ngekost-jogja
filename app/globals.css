@@ -268,3 +268,6 @@ img { max-width: 100%; height: auto; display: block; }
 .form-error { background: var(--danger-bg); color: #7a1410; border-radius: 12px; padding: 10px 14px; font-weight: 600; }
 
 .modal__list { margin: 10px 0 0; padding-left: 22px; font-size: 0.95rem; color: #4a2f45; display: grid; gap: 6px; font-weight: 600; }
+
+.gallery-note { margin: 8px 0 0; font-size: 0.75rem; color: var(--muted); }
+.modal__nojs { margin: 8px 0; padding: 10px 12px; border-radius: 10px; background: #fff; color: #7a1410; font-size: 0.85rem; font-weight: 600; }

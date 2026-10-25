@@ -35,7 +35,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             <ArrowLeft size={18} aria-hidden="true" /> Kembali
           </Link>
           <h1>Listing ini terkunci</h1>
-          <ListingGate lockedCount={1} />
+          <ListingGate lockedCount={1} headingLevel={2} />
         </main>
       </>
     );
@@ -56,7 +56,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
         <h1>{listing.title}</h1>
         <p className="card__meta">
           <span className={`tag tag--${listing.type}`}>{listing.type === 'kost' ? 'Kost' : 'Kontrakan'}</span>
-          <span className={`tag tag--role tag--${listing.role}`}>{ROLE_LABEL[listing.role]}</span>
+          {fee ? <span className={`tag tag--role tag--${listing.role}`}>{ROLE_LABEL[listing.role]}</span> : null}
           <span className="card__area">
             <MapPin size={14} aria-hidden="true" /> {areaLabel(listing.area)} · {listing.neighborhood_label}
           </span>
@@ -78,6 +78,9 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             );
           })}
         </div>
+        <p className="gallery-note" data-testid="gallery-note">
+          Foto contoh: ketiga foto ini potongan dari gambar contoh yang sama karena ini data dummy. Listing asli wajib memiliki tiga foto yang berbeda.
+        </p>
         <p className="card__price">
           <span className="card__amount">{formatRupiah(listing.price_monthly)}</span> <span className="card__period">/ {listing.price_period}</span>
         </p>
@@ -92,9 +95,11 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
             {listing.last_confirmed_at ? `Terakhir dikonfirmasi ${formatDateId(listing.last_confirmed_at)} (${confirmed_label.replace('Dikonfirmasi ', '')})` : 'Belum dikonfirmasi'}
           </p>
           {listing.expires_at ? <p>Tayang sampai {formatDateId(listing.expires_at)} kecuali dikonfirmasi ulang.</p> : null}
-          <p className={`card__fee card__fee--${fee.tone}`} data-testid="fee-note">
-            {ROLE_LABEL[listing.role]}: {fee.text}
-          </p>
+          {fee ? (
+            <p className={`card__fee card__fee--${fee.tone}`} data-testid="fee-note">
+              {ROLE_LABEL[listing.role]}: {fee.text}
+            </p>
+          ) : null}
         </section>
 
         <TrustPanel items={evidence} />
@@ -114,9 +119,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
         )}
         <h2>Kondisi</h2>
         <p>{listing.condition_details}</p>
-        <p>
-          Dipasang oleh {listing.role === 'owner' ? 'pemilik' : 'agen'} · Kontak: {listing.contact_name}
-        </p>
+        <p>Kontak: {listing.contact_name}</p>
 
         <ApproxMap point={{ latitude: listing.approx_latitude, longitude: listing.approx_longitude }} precisionM={listing.approx_precision_m} label={listing.neighborhood_label} />
 

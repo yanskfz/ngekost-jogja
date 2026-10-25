@@ -22,7 +22,9 @@ export default async function ReportPage({ params, searchParams }: Props) {
   const sp = await searchParams;
   if (!isListingId(id)) notFound();
 
-  if (sp.status === 'ok') {
+  const reported = await getReportedIds();
+  // The confirmation is only for a report this visitor actually filed; a bare ?status=ok must not claim one.
+  if (sp.status === 'ok' && reported.includes(id)) {
     // The confirmation reads no listing data, so it is safe even after the listing disappeared from results.
     return (
       <>
@@ -44,7 +46,6 @@ export default async function ReportPage({ params, searchParams }: Props) {
     );
   }
 
-  const reported = await getReportedIds();
   const cards = listPreviewCards(new Date(), reported);
   const card = cards.find((c) => c.id === id);
   if (!card) notFound();

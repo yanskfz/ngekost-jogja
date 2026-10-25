@@ -20,6 +20,24 @@ Callers of the changed code: `toPublicListing` (every public read path: preview 
 | Report-action 404 probes were attributed to the tracked page and polluted console-error tracking | P3 | E2E failure | 404 checks use untracked requests | FAIL (test setup) | PASS | Test-only. |
 Earlier tests were kept; none was removed or weakened.
 
+## Independent QA findings F1-F6 and the role/fee decision: reproduction log
+Method: expectations were written first and the suite was run before any fix. Result before the fix: 5 FAIL (role/fee rule on cards and detail for owner and zero-fee agen listings, F3) and the runner stopped on a timeout waiting for the F1 gallery note, so the F2 and F4-F6 checks had not run yet (the `brokerFeeNote` unit test also failed). After the fix: all of them PASS.
+
+| Finding | Severity | Regression tests kept | Before | After | Residual risk |
+| --- | --- | --- | --- | --- | --- |
+| F1 three photos are crops of one image | P2 | `F1: the detail gallery says the sample photos are crops...` | FAIL (no note; runner timeout) | PASS | Only labelled, not solved: real distinct photos are still needed. |
+| F2 consent unusable without JS | P3 | two `F2:` checks (notice shown without JS, absent with JS) | not reached | PASS | The action stays disabled by design, so such visitors still cannot proceed. |
+| F3 confirmation without a report | P3 | `F3: ?status=ok ... shows no confirmation`; honeypot check rewritten | FAIL | PASS | A visitor can still reload the confirmation of their own report (intended). |
+| F4 heading order | P3 | `F4/F5: heading order and landmarks are valid on` six pages (axe best-practice rules, which the WCAG-tag runs elsewhere do not include) | not reached | PASS | Only the listed pages. |
+| F5 404 landmark | P3 | the same axe rules on a 404 page plus a status/`h1`/link check | not reached | PASS | None known. |
+| F6 inert button without JS | P3 | two `F6:` checks (no button without JS, appears with JS) | not reached | PASS | A brief delay before the control appears; Lighthouse CLS stayed 0. |
+| F7 malformed URL 502 | - | none (platform behaviour, same on non-existent routes) | - | - | Not ours to fix. |
+| Role/fee rule (Product Owner) | P1 | four `Role/fee:` checks plus owner/detail checks and unit tests | FAIL | PASS | The role filter still exists (open question). |
+
+One test of mine produced a false positive during this work: the locked-page check searched for the word "laporkan", which now also appears in the generic 404 copy ("dilaporkan") that Next includes in every page payload. It was narrowed to the real report link and label; the locked listing's title, price, and contact data are still asserted absent.
+
+Lighthouse after these changes (homepage, consented, single localhost run): Performance 88, Accessibility 100, Best Practices 96; LCP 2.6 s, CLS 0, TBT 390 ms.
+
 ## Change request during visual review: one-line card address
 Product Owner asked that list-card addresses be limited to one line with an ellipsis and show the kecamatan and region. Tests were written first and failed (the one-line address element did not exist, so the E2E runner timed out on it; 12 unit cases failed because `compactLocation` was missing). After the change: 12 new unit cases and 8 new E2E checks pass (kecamatan text, one line with an ellipsis on the real and the stress cards, tooltip and screen-reader text keep the full label, the detail page keeps the full label, the 160-character address becomes "Kec. Depok, Kab. Sleman"). The card geometry check no longer treats the intentional ellipsis as overflow; every other overflow check is unchanged. Screenshot: `docs/qa-screenshots/16-stress-cards-address-390.png`.
 

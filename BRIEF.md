@@ -23,7 +23,9 @@
 - [x] Admin auth — start with one admin account using email plus WhatsApp reachability verification.
 - [x] WhatsApp verification scope — admin-supervised manual reachability check for MVP; automated OTP is deferred.
 - [ ] Report response SLA — the design requires an admin response SLA before launch; no value was given, so the preview states none.
-- [ ] Broker "relationship" disclosure — the design says brokers must disclose any fee or relationship; only the fee (none / disclosed amount / undisclosed) is modelled.
+- [ ] Broker "relationship" disclosure — the design says brokers must disclose any fee or relationship; only the fee (none / disclosed amount / undisclosed) is modelled, and the Product Owner has decided that "no fee" and the role are not shown (see Decisions).
+- [ ] Role filter — the "Pemasang iklan" filter (Pemilik / Agen) still exists while the role is mostly hidden on cards and detail; keep or remove?
+- [ ] Dummy photos — three photos per dummy listing are crops of one reference image (F1); real distinct photos are needed before any real listing.
 - [ ] Price bands and sort options — below Rp 1 jt / Rp 1–2 jt / above Rp 2 jt per month (yearly kontrakan converted to monthly) and the four sort options were chosen by the implementer; confirm or replace.
 - [ ] Availability `unknown` on approved listings — allowed in the dummy data (labelled "Ketersediaan belum dikonfirmasi"); decide whether admin approval should require a known value.
 - [ ] Homepage copy — hero and trust-card wording were changed away from "dari pemilik langsung" and "terverifikasi" (the design flags both); confirm the new wording.
@@ -60,6 +62,7 @@
 - 2026-10-25 — Trust badges may only state checks backed by a stored record, are never worded as a safety guarantee, and show missing checks as "belum" on the detail page.
 - 2026-10-25 — Roles are labelled "Pemilik" and "Agen"; broker fees are stated as declared and never collected by Ngekost Jogja.
 - 2026-10-25 — The anonymous 3-of-5 limit is a fixed launch rule. Consent completion, abandonment, and sign-up conversion are measured; safety consent is not A/B tested yet.
+- 2026-10-25 — Broker role and fee are shown only when there is a fee to flag: "no broker fee" and owner listings display nothing, not even the role. A fee that is not stated is displayed ("belum dicantumkan"). Product Owner decision; supersedes the "role badge on every card" part of addition #4.
 - 2026-10-25 — List cards show the address on one line (kecamatan and region, ellipsis when too long); the full neighborhood label stays on the detail page. Requested by the Product Owner during the first visual review.
 - 2026-10-25 — The consent modal wording changed, so the consent version is `2026-10-v2` and earlier consent no longer counts.
 

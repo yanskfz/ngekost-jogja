@@ -373,7 +373,7 @@ try {
     const card = (id) => p.locator(`[data-listing-id="${id}"]`);
     const ev = (await card('lst-1').locator('.trust-row li').allInnerTexts()).map((t) => t.trim());
     record('Evidence row: card shows exactly the five checks the record supports, in order', JSON.stringify(ev) === JSON.stringify(['3 foto', 'WA bisa dihubungi', 'Email', 'Ditinjau admin', 'Izin tayang']), ev.join(' | '), 'P1');
-    record('Role badge: Pemilik on owner card, Agen on broker card', (await card('lst-1').locator('.tag--role').innerText()) === 'Pemilik' && (await card('lst-2').locator('.tag--role').innerText()) === 'Agen', '', 'P1');
+    record('Role and fee are shown only when there is a fee: owner cards show neither; the agen card with a fee shows "Agen" and the fee', (await card('lst-1').locator('.tag--role').count()) === 0 && (await card('lst-3').locator('.tag--role').count()) === 0 && (await card('lst-1').locator('.card__fee').count()) === 0 && (await card('lst-2').locator('.tag--role').innerText()) === 'Agen', '', 'P1');
     const st = async (id) => (await card(id).locator('.card__status').innerText()).replace(/\s+/g, ' ');
     const s1 = await st('lst-1'), s2 = await st('lst-2'), s3 = await st('lst-3');
     record('Freshness and availability row on every card', /Tersedia/.test(s1) && /Dikonfirmasi 10 hari lalu/.test(s1) && /Ketersediaan belum dikonfirmasi/.test(s2) && /Dikonfirmasi 30 hari lalu/.test(s2) && /Tersisa sedikit/.test(s3) && /Dikonfirmasi 1 bulan lalu/.test(s3), `${s1} | ${s2} | ${s3}`, 'P1');
@@ -489,13 +489,13 @@ try {
   {
     const p = await newPage();
     await p.goto(`${BASE}/listing/lst-1`);
-    record('Detail (owner): fee note says owner direct, no broker fee', /Pemilik: Pemilik langsung, tanpa biaya makelar/.test(await p.getByTestId('fee-note').innerText()), '', 'P2');
+    record('Detail (owner): no role badge, no broker-fee note, and no "tanpa biaya makelar" text anywhere', (await p.getByTestId('fee-note').count()) === 0 && (await p.locator('.tag--role').count()) === 0 && !/tanpa biaya makelar|Pemilik langsung/i.test(await p.locator('main').innerText()), '', 'P1');
     for (const id of ['lst-1', 'lst-2', 'lst-3']) {
       const raw = await (await p.request.get(`${BASE}/listing/${id}`)).text();
       record(`Privacy: raw response for /listing/${id} contains no exact coordinates, private address, owner id, or source`, !raw.includes(String(EXACT[id].lat)) && !raw.includes(String(EXACT[id].lng)) && !raw.includes(EXACT[id].address) && !/owner_id|acc-owner|acc-broker|dummy-fixture/.test(raw), '', 'P0');
     }
     const lockedRaw = await (await p.request.get(`${BASE}/listing/lst-9`)).text();
-    record('Locked listing page has no contact, survey, map, or report surface', !/wa\.me|survey-cta|class="map"|laporkan/.test(lockedRaw) && !/Cempaka/.test(lockedRaw), '', 'P0');
+    record('Locked listing page has no contact, survey, map, or report surface', !/wa\.me|survey-cta|class="map"|lst-9\/laporkan|Laporkan listing/.test(lockedRaw) && !/Cempaka/.test(lockedRaw), '', 'P0');
     const qd = await newPage();
     await qd.goto(`${BASE}/qa/detail`);
     record('Missing-data detail: unverified evidence reads "belum", no contact consent hides survey/WhatsApp, report link stays', (await qd.locator('.trust-panel li.is-missing').count()) === 5 && (await qd.getByTestId('survey-cta').count()) === 0 && /belum mengizinkan kontak/.test(await qd.locator('main').innerText()) && (await qd.getByRole('link', { name: 'Laporkan listing ini' }).count()) === 1, '', 'P1');
@@ -539,9 +539,12 @@ try {
     await p.getByLabel('Harga menyesatkan').check();
     await p.evaluate(() => { document.querySelector('input[name=website]').value = 'http://spam.test'; });
     await p.getByRole('button', { name: 'Kirim laporan' }).click();
-    await p.getByTestId('report-confirmation').waitFor();
+    await p.waitForURL(/laporkan/);
     await p.goto(BASE);
-    record('Report negative: a filled honeypot looks successful but hides nothing', (await idsOnPage(p)).includes('lst-1'), '', 'P2');
+    record('Report negative: a filled honeypot hides nothing and claims no success', (await idsOnPage(p)).includes('lst-1') && (await (await p.request.get(`${BASE}/listing/lst-1/laporkan`)).text()).indexOf('report-confirmation') === -1, '', 'P2');
+    // F3: a confirmation URL must not claim a report that was never filed
+    const ghost = await (await p.request.get(`${BASE}/listing/lst-1/laporkan?status=ok`)).text();
+    record('F3: ?status=ok for a listing this visitor never reported shows no confirmation and no "disembunyikan" claim', !/report-confirmation|Laporan diterima|disembunyikan dari hasil/.test(ghost) && /Kirim laporan/.test(ghost), '', 'P2');
     // negative: forged ids cannot report or probe locked / unknown listings
     await p.goto(`${BASE}/listing/lst-3/laporkan`);
     await p.getByLabel('Lokasi tidak sesuai').check();
@@ -781,6 +784,62 @@ try {
     await fc.close();
     const api = (init, body) => fetch(`${BASE}/api/events`, { method: 'POST', ...init, body });
     record('Events API negative: unknown event 400, malformed JSON 400, oversized body 413, GET 405', (await api({}, JSON.stringify({ event: 'page_view' }))).status === 400 && (await api({}, '{nope')).status === 400 && (await api({}, JSON.stringify({ event: 'consent_shown', pad: 'x'.repeat(300) }))).status === 413 && (await fetch(`${BASE}/api/events`)).status === 405 && (await api({}, JSON.stringify({ event: 'gate_shown' }))).status === 204, '', 'P1');
+  }
+
+  // ===== Findings from independent QA (F1–F6) and the Product Owner's role/fee decision =====
+  {
+    // Role/fee: signed-in, all five listings
+    const u = await newPage();
+    await signIn(u);
+    const c9 = u.locator('[data-listing-id="lst-9"]'), c10 = u.locator('[data-listing-id="lst-10"]');
+    record('Role/fee: an agen listing with no broker fee (lst-9) shows no role badge and no fee line', (await c9.locator('.tag--role').count()) === 0 && (await c9.locator('.card__fee').count()) === 0, '', 'P1');
+    record('Role/fee: an agen listing whose fee is not stated (lst-10) shows "Agen" and "belum dicantumkan"', (await c10.locator('.tag--role').innerText()) === 'Agen' && /belum dicantumkan/.test(await c10.locator('.card__fee').innerText()), '', 'P1');
+    await u.goto(`${BASE}/listing/lst-9`);
+    record('Role/fee: the detail of a zero-fee agen listing shows no role badge, no fee note, and no "Agen" label', (await u.getByTestId('fee-note').count()) === 0 && (await u.locator('.tag--role').count()) === 0 && !/\bAgen\b|agen\b/.test(await u.locator('main > .card__meta, main h1').allInnerTexts().then((t) => t.join(' '))), '', 'P1');
+    await u.goto(`${BASE}/listing/lst-10`);
+    record('Role/fee: the detail of an agen listing with an unstated fee shows the role and the fee note', (await u.locator('.tag--role').innerText()) === 'Agen' && /belum dicantumkan/.test(await u.getByTestId('fee-note').innerText()), '', 'P1');
+    await u.context().close();
+
+    // F1: dummy gallery is honest about being sample crops
+    const g = await newPage();
+    await g.goto(`${BASE}/listing/lst-1`);
+    record('F1: the detail gallery says the sample photos are crops of one example image and that real listings need three different photos', /potongan dari gambar contoh yang sama/.test(await g.getByTestId('gallery-note').innerText()) && /tiga foto yang berbeda/.test(await g.getByTestId('gallery-note').innerText()), '', 'P2');
+
+    // F2: consent modal without JavaScript explains itself
+    const nj = await newPage({ consent: false, js: false, track: false });
+    await nj.goto(BASE);
+    record('F2: with JavaScript disabled the consent modal explains that JavaScript is needed (and the action stays disabled)', /Aktifkan JavaScript/.test(await nj.locator('.modal').innerText()) && (await nj.getByRole('button', { name: 'Saya paham, lanjut melihat listing' }).isDisabled()), '', 'P3');
+    await nj.context().close();
+    const wj = await newPage({ consent: false, track: false });
+    await wj.goto(BASE);
+    record('F2: with JavaScript enabled the no-JavaScript notice is not shown', !(await wj.locator('.modal').innerText()).includes('Aktifkan JavaScript'), '', 'P3');
+    await wj.context().close();
+
+    // F4/F5: heading order and landmarks (axe best-practice rules are outside the WCAG tag sets used elsewhere)
+    const bp = async (p) => {
+      await p.evaluate(axeSource);
+      return (await p.evaluate(() => axe.run(document, { runOnly: { type: 'rule', values: ['heading-order', 'landmark-one-main', 'region', 'page-has-heading-one', 'landmark-unique'] } }))).violations.map((v) => `${v.id}(${v.impact}, ${v.nodes.length})`);
+    };
+    const bpPage = await newPage({ track: false });
+    for (const path of ['/', '/listing/lst-1', '/listing/lst-9', '/listing/lst-999', '/masuk', '/listing/lst-1/laporkan']) {
+      await bpPage.goto(BASE + path);
+      const v = await bp(bpPage);
+      record(`F4/F5: heading order and landmarks are valid on ${path}`, v.length === 0, v.join(', '), 'P3');
+    }
+    const nf = await bpPage.goto(`${BASE}/listing/lst-999`);
+    record('F5: the 404 page keeps status 404, has a main landmark, an h1, and a way home', nf.status() === 404 && (await bpPage.locator('main h1').count()) === 1 && (await bpPage.getByRole('link', { name: /beranda|kembali/i }).count()) >= 1, '', 'P3');
+    await bpPage.context().close();
+
+    // F6: the location control only exists when JavaScript can run it
+    const nj2 = await newPage({ js: false, track: false });
+    await nj2.goto(BASE);
+    record('F6: with JavaScript disabled there is no inert "Urutkan dari lokasi saya" button', (await nj2.getByRole('button', { name: 'Urutkan dari lokasi saya' }).count()) === 0 && (await idsOnPage(nj2)).length === 3, '', 'P3');
+    await nj2.context().close();
+    const wj2 = await newPage({ track: false });
+    await wj2.goto(BASE);
+    await wj2.getByRole('button', { name: 'Urutkan dari lokasi saya' }).waitFor();
+    record('F6: with JavaScript enabled the location control appears', true, '', 'P3');
+    await wj2.context().close();
   }
 
   // ===== Card layout regression: stress content at every required viewport =====

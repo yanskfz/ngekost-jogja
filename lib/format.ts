@@ -37,10 +37,13 @@ export const ROLE_LABEL: Record<SubmitterType, string> = { owner: 'Pemilik', bro
 
 export type FeeNote = { text: string; tone: 'ok' | 'warn' };
 
-/** Broker-fee transparency. Ngekost Jogja never collects the fee; this only states what the submitter declared. */
-export function brokerFeeNote(role: SubmitterType, status: BrokerFeeStatus, amount: number | null): FeeNote {
-  if (role === 'owner') return { text: 'Pemilik langsung, tanpa biaya makelar', tone: 'ok' };
-  if (status === 'none') return { text: 'Tanpa biaya makelar', tone: 'ok' };
+/**
+ * Broker-fee transparency. Only a fee (or an unknown fee) is worth a visitor's attention, so "no fee" and owner
+ * listings return null and nothing is shown, not even the role. Ngekost Jogja never collects the fee; the note only
+ * states what the submitter declared.
+ */
+export function brokerFeeNote(role: SubmitterType, status: BrokerFeeStatus, amount: number | null): FeeNote | null {
+  if (role === 'owner' || status === 'none') return null;
   if (status === 'disclosed' && amount !== null) return { text: `Biaya makelar ${formatRupiah(amount)}. Ngekost Jogja tidak memungut biaya ini`, tone: 'warn' };
   return { text: 'Biaya makelar belum dicantumkan. Tanyakan sebelum survei', tone: 'warn' };
 }

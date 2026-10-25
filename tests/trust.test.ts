@@ -139,14 +139,15 @@ describe('freshness, availability, role and broker fee', () => {
     expect(ROLE_LABEL).toEqual({ owner: 'Pemilik', broker: 'Agen' });
   });
 
-  it('states broker fees plainly and says Ngekost does not collect them', () => {
-    expect(brokerFeeNote('owner', 'none', null).tone).toBe('ok');
-    expect(brokerFeeNote('broker', 'none', null).text).toBe('Tanpa biaya makelar');
+  it('shows a broker-fee note only when there is a fee or the fee is unknown; "no fee" says nothing', () => {
+    expect(brokerFeeNote('owner', 'none', null)).toBeNull();
+    expect(brokerFeeNote('owner', 'disclosed', 1_000_000)).toBeNull(); // owners never carry a broker fee note
+    expect(brokerFeeNote('broker', 'none', null)).toBeNull();
     const disclosed = brokerFeeNote('broker', 'disclosed', 1500000);
-    expect(disclosed.text).toContain('1.500.000');
-    expect(disclosed.text).toMatch(/tidak memungut/);
-    expect(brokerFeeNote('broker', 'undisclosed', null).text).toMatch(/belum dicantumkan/);
-    expect(brokerFeeNote('broker', 'disclosed', null).text).toMatch(/belum dicantumkan/); // amount missing never reads as free
+    expect(disclosed?.text).toContain('1.500.000');
+    expect(disclosed?.text).toMatch(/tidak memungut/);
+    expect(brokerFeeNote('broker', 'undisclosed', null)?.text).toMatch(/belum dicantumkan/);
+    expect(brokerFeeNote('broker', 'disclosed', null)?.text).toMatch(/belum dicantumkan/); // amount missing never reads as free
   });
 });
 
