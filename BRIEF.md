@@ -2,59 +2,61 @@
 
 ## Status
 
-- Stage: requirements clarified; ready for Agent OS planning.
+- Stage: requirements locked; implementation plan ready for approval.
 - Repository: `yanskfz/ngekost-jogja`, public, default branch `main`.
 - Workflow: Agent OS + Claude Code implementation after plan approval.
-- Hosting direction: Vercel first; production database/provider selection remains a planning task.
+- Hosting direction: Vercel first; Supabase is the recommended production data/auth/storage layer.
 - Date: 2026-10-25.
 
 ## Open questions
 
-- [ ] Which map provider should MVP use: Google Maps, Mapbox, OpenStreetMap, or another provider?
-- [ ] What exact verification evidence should distinguish an owner from a makelar on the listing?
-- [ ] What is the user-facing report flow and SLA when a listing is suspected to be fraudulent?
-- [ ] Should expired listings be hidden immediately at 2 months or enter a reconfirmation queue first?
-- [ ] What exact admin account/auth setup should be used for the first supervised launch?
+- [x] Map provider — use OpenStreetMap-compatible maps for MVP.
+- [x] Owner/broker verification — use declared role plus admin verification; do not claim guaranteed ownership.
+- [x] Fraud report handling — report immediately hides the listing while admin investigates.
+- [x] Expiry — hide automatically after 2 months; allow reconfirmation.
+- [x] Admin auth — start with one admin account using email plus WhatsApp reachability verification.
+- [x] WhatsApp verification scope — admin-supervised manual reachability check for MVP; automated OTP is deferred.
 
 ## Next step
 
-Codex will turn this brief into an Agent OS project plan with scoped tasks and acceptance criteria. Claude Code starts only after the plan and open decisions are approved.
+Review `IMPLEMENTATION_PLAN.md`. After approval, hand off the scoped tasks to Claude Code starting with the foundation/data model task.
 
 ## Decisions
 
 - 2026-10-25 — Start with Sleman and Kota Jogja as the initial service area.
 - 2026-10-25 — Both property owners and brokers/makelar may submit listings.
 - 2026-10-25 — Required listing inputs include 3 photos, Facebook URL when applicable, reachable WhatsApp number, detailed condition, map location, and a contactable name.
-- 2026-10-25 — Owner/broker sign-in uses WhatsApp and email, with admin-supervised approval before publication.
-- 2026-10-25 — Admin has visibility and moderation control over all submitted listings; submitters manage only their own listings.
-- 2026-10-25 — Listings expire after 2 months unless reconfirmed.
+- 2026-10-25 — Owner/broker sign-in uses email plus admin-supervised WhatsApp reachability verification for MVP.
+- 2026-10-25 — Admin has visibility and moderation control over every submitted listing; submitters manage only their own listings.
+- 2026-10-25 — Listings hide automatically after 2 months unless reconfirmed.
 - 2026-10-25 — MVP supports map, text search, and structured filters.
+- 2026-10-25 — OpenStreetMap-compatible maps are the default MVP map direction.
 - 2026-10-25 — MVP does not process subscriptions, payments, booking, escrow, deposits, or transfers.
-- 2026-10-25 — Anti-scam safeguards are a product requirement: approval checks, prominent no-transfer warnings, report flow, and rapid hide/review controls.
+- 2026-10-25 — Anti-scam safeguards are core: approval checks, prominent no-transfer warnings, report flow, immediate hide/review controls, and moderation audit events.
 - 2026-10-25 — Publication of third-party listing information requires permission; Facebook URLs are provenance/reference data, not permission to copy without consent.
-- 2026-10-25 — Requirements and acceptance criteria must be clear before Claude Code implementation starts.
+- 2026-10-25 — Requirements and acceptance criteria are locked before Claude Code implementation starts.
 
 ## Requirements
 
 ### Product
 
 - Public, mobile-first marketplace for kost and kontrakan listings in Sleman and Kota Jogja.
-- Owners and brokers/makelar can register through WhatsApp and email.
+- Owners and brokers/makelar can register with email and submit a WhatsApp number for admin reachability verification.
 - Submitters can create and edit only their own listings.
 - Admin can inspect, approve, reject, hide, archive, and bulk-import every listing.
-- Public users can search by text, browse a map, and filter by area, type, price, facilities, and availability.
+- Public users can search by text, browse a map, and filter by area, type, price, facilities, role, and availability.
 - Listing detail pages show condition details, 3 photos, map location, contact name, WhatsApp contact, and provenance URL when supplied.
 - Users can contact the submitter through WhatsApp only after the listing is approved and contact consent exists.
-- Every listing is automatically marked expired after 2 months unless reconfirmed by the submitter/admin.
+- Every listing hides automatically after 2 months unless reconfirmed by the submitter/admin.
 
 ### Moderation and trust
 
 A listing is not public until admin approval confirms, at minimum:
 
-- submitter has completed WhatsApp and email contact verification;
+- submitter email is verified and WhatsApp reachability has been checked;
 - publish and contact consent are recorded;
 - the listing has 3 photos, a reachable WhatsApp number, contact name, detailed condition, and map location;
-- the location, price, type, and photos are coherent enough for review;
+- location, price, type, and photos are coherent enough for review;
 - owner/broker role is declared;
 - third-party source URLs are retained for provenance and permission is confirmed before republication.
 
@@ -62,9 +64,9 @@ The product must:
 
 - show a clear warning that Ngekost Jogja does not request or process transfer/payment and users must not transfer money before independent verification and viewing;
 - never collect deposits, booking fees, admin fees, or payment credentials;
-- provide “Report listing” with reasons such as suspected scam, wrong location, unavailable listing, misleading price, or abuse;
-- allow admin to hide a reported listing immediately while investigating;
-- keep an audit trail of approval, rejection, expiry, reconfirmation, and report actions;
+- provide “Report listing” with suspected scam, wrong location, unavailable listing, misleading price, or abuse reasons;
+- immediately hide a reported listing while admin investigates;
+- keep an audit trail of approval, rejection, hide, restore, expiry, reconfirmation, and report actions;
 - avoid claiming that an approved listing is guaranteed safe or that Ngekost guarantees a transaction.
 
 ### Privacy and consent
@@ -79,9 +81,10 @@ The product must:
 ### Delivery
 
 - Vercel-compatible deployment.
-- Production storage/auth/map provider must be selected before implementation of those integrations.
+- Recommended production stack: Next.js + TypeScript, Supabase Postgres/Auth/Storage, and OpenStreetMap-compatible map rendering.
+- Production provider credentials/configuration must be documented without committing secrets.
 - Claude Code is the implementation owner after the plan is approved.
-- Each implementation task must have explicit acceptance criteria and a narrow file scope.
+- Each implementation task has explicit acceptance criteria and a narrow file scope.
 - Review, QA, and deployment verification are separate quality gates.
 
 ## Data
@@ -155,10 +158,9 @@ The product must:
 
 ## Done when
 
-- [ ] Open questions are answered or explicitly deferred.
-- [ ] Scope, non-goals, trust policy, and moderation checklist are approved.
-- [ ] Data contract and permission/status states are approved.
-- [ ] Agent OS plan has task-level acceptance criteria.
+- [x] Product scope, non-goals, trust policy, and moderation checklist are approved.
+- [x] Data contract and permission/status states are approved.
+- [x] Agent OS plan has task-level acceptance criteria.
 - [ ] Claude Code implements only approved tasks.
 - [ ] Independent review passes.
 - [ ] QA records executed results.
