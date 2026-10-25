@@ -21,8 +21,15 @@ ASSETS = {
     'trust-photo': (OPTION3, (64, 734, 148, 818), 'Trust checklist: minimum 3 photos'),
     'trust-whatsapp': (OPTION3, (301, 734, 385, 818), 'Trust checklist: WhatsApp reachable'),
     'trust-shield': (OPTION3, (573, 734, 657, 818), 'Trust checklist: admin reviewed'),
-    'photo-kost': (OPTION3, (40, 964, 348, 1180), 'Kost listing photo'),
-    'photo-kontrakan': (OPTION3, (40, 1199, 348, 1424), 'Kontrakan listing photo'),
+    # Photo crops stop left of / below the mockup's heart button (a UI overlay baked into the reference) so no fake control ships inside an image.
+    'photo-kost': (OPTION3, (40, 964, 285, 1180), 'Kost listing photo (slot 1), cropped to exclude the mockup heart overlay'),
+    'photo-kontrakan': (OPTION3, (40, 1199, 285, 1424), 'Kontrakan listing photo (slot 1), cropped to exclude the mockup heart overlay'),
+    # Distinct crops of the same two reference photos. They stand in for photo slots 2 and 3 of the dummy listings so the
+    # detail gallery shows three different images (no new imagery). Real listings will have three real photos.
+    'photo-kost-2': (OPTION3, (40, 1022, 348, 1180), 'Kost listing photo, slot 2 (lower band of the reference photo, below the heart overlay)'),
+    'photo-kost-3': (OPTION3, (180, 1022, 348, 1180), 'Kost listing photo, slot 3 (lower-right crop of the reference photo, below the heart overlay)'),
+    'photo-kontrakan-2': (OPTION3, (40, 1258, 348, 1424), 'Kontrakan listing photo, slot 2 (lower band of the reference photo, below the heart overlay)'),
+    'photo-kontrakan-3': (OPTION3, (180, 1258, 348, 1424), 'Kontrakan listing photo, slot 3 (lower-right crop of the reference photo, below the heart overlay)'),
     'warning-girl': (MODAL_REF, (941, 112, 1272, 482), 'Anti-scam modal and warning card illustration'),
     'footer-art': (OPTION3, (372, 1648, 853, 1844), 'Footer scene'),
 }

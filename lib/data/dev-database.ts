@@ -9,7 +9,7 @@ import {
   toPublicListing,
 } from '@/lib/data/rules';
 import { SQLITE_SCHEMA } from '@/lib/data/sqlite-schema';
-import type { DevData, Listing, ModerationAction, PublicListing } from '@/lib/data/types';
+import type { DevData, Listing, ModerationAction, PublicListing, ReportReason } from '@/lib/data/types';
 
 /**
  * Local development/test adapter backed by SQLite. Not used by the Vercel preview and not a production database.
@@ -52,20 +52,22 @@ export class DevDatabase {
     for (const a of data.accounts) {
       run('INSERT INTO accounts VALUES (?,?,?,?,?,?,?,?)', a.id, a.email, a.whatsapp, a.role, a.submitter_type, a.email_verified_at, a.whatsapp_verified_at, a.created_at);
     }
+    const listingColumns = [
+      'id', 'title', 'type', 'area', 'address', 'neighborhood_label', 'map_latitude', 'map_longitude', 'price_monthly', 'price_period',
+      'deposit_information', 'facilities', 'condition_details', 'contact_name', 'contact_whatsapp', 'source_url', 'role', 'availability', 'contact_reachability_status',
+      'broker_fee_status', 'broker_fee_amount', 'status', 'owner_id', 'source', 'permission_status', 'verification_status',
+      'last_confirmed_at', 'expires_at', 'created_at', 'updated_at',
+    ] as const;
+    const insertListing = `INSERT INTO listings (${listingColumns.join(',')}) VALUES (${listingColumns.map(() => '?').join(',')})`;
     for (const l of data.listings) {
-      run(
-        'INSERT INTO listings VALUES (' + Array(25).fill('?').join(',') + ')',
-        l.id, l.title, l.type, l.area, l.address, l.map_latitude, l.map_longitude, l.price_monthly, l.price_period, l.deposit_information,
-        JSON.stringify(l.facilities), l.condition_details, l.contact_name, l.contact_whatsapp, l.source_url, l.role, l.status,
-        l.owner_id, l.source, l.permission_status, l.verification_status, l.last_confirmed_at, l.expires_at, l.created_at, l.updated_at,
-      );
+      run(insertListing, ...listingColumns.map((c) => (c === 'facilities' ? JSON.stringify(l.facilities) : (l[c] as string | number | null))));
     }
     for (const i of data.images) run('INSERT INTO listing_images VALUES (?,?,?,?,?)', i.id, i.listing_id, i.position, i.storage_path, i.created_at);
     for (const c of data.consents) {
       run('INSERT INTO consents VALUES (?,?,?,?,?,?,?,?)', c.id, c.listing_id, c.account_id, c.publish_allowed ? 1 : 0, c.contact_allowed ? 1 : 0, c.consent_text_version, c.captured_at, c.audit_id);
     }
     for (const e of data.moderationEvents) run('INSERT INTO moderation_events VALUES (?,?,?,?,?,?)', e.id, e.listing_id, e.admin_id, e.action, e.reason, e.created_at);
-    for (const r of data.reports) run('INSERT INTO reports VALUES (?,?,?,?,?,?,?,?)', r.id, r.listing_id, r.reporter_contact, r.reason, r.detail, r.status, r.created_at, r.resolved_at);
+    for (const r of data.reports) run('INSERT INTO reports (id, listing_id, reporter_contact, reporter_key, reason, detail, status, created_at, resolved_at) VALUES (?,?,?,?,?,?,?,?,?)', r.id, r.listing_id, r.reporter_contact, null, r.reason, r.detail, r.status, r.created_at, r.resolved_at);
     for (const b of data.importBatches) run('INSERT INTO import_batches VALUES (?,?,?,?,?)', b.id, b.admin_id, b.filename, b.row_count, b.created_at);
   }
 
@@ -135,6 +137,43 @@ export class DevDatabase {
       throw error;
     }
     return { ...listing, status: target, last_confirmed_at: lastConfirmedAt, expires_at: expiresAt, updated_at: stamp };
+  }
+
+  /**
+   * Report intake. One durable report per (listing, reporter key, reason) per 24 h window: a retry returns the existing
+   * report. An approved listing is hidden from public results immediately (status 'reported') until an admin decides.
+   */
+  createReport(
+    listingId: string,
+    input: { reason: ReportReason; detail: string | null; contact: string | null },
+    reporterKey: string,
+    now: Date = new Date(),
+  ): { id: string; created: boolean } {
+    const listing = this.db.prepare('SELECT id, status FROM listings WHERE id = ?').get(listingId);
+    if (!listing) throw new AccessError('Listing not found.');
+    const since = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+    const existing = this.db
+      .prepare('SELECT id FROM reports WHERE listing_id = ? AND reporter_key = ? AND reason = ? AND created_at > ? ORDER BY created_at LIMIT 1')
+      .get(listingId, reporterKey, input.reason, since);
+    if (existing) return { id: String(existing.id), created: false };
+    const id = `rep-dev-${++this.idCounter}`;
+    const stamp = now.toISOString();
+    this.db.exec('BEGIN');
+    try {
+      this.db
+        .prepare("INSERT INTO reports (id, listing_id, reporter_contact, reporter_key, reason, detail, status, created_at, resolved_at) VALUES (?,?,?,?,?,?,'open',?,NULL)")
+        .run(id, listingId, input.contact, reporterKey, input.reason, input.detail, stamp);
+      if (listing.status === 'approved') this.db.prepare("UPDATE listings SET status = 'reported', updated_at = ? WHERE id = ?").run(stamp, listingId);
+      this.db.exec('COMMIT');
+    } catch (error) {
+      this.db.exec('ROLLBACK');
+      throw error;
+    }
+    return { id, created: true };
+  }
+
+  listReports(listingId: string): Row[] {
+    return this.db.prepare('SELECT * FROM reports WHERE listing_id = ? ORDER BY created_at, id').all(listingId);
   }
 
   listModerationEvents(listingId: string): Row[] {

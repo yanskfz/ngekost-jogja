@@ -19,6 +19,12 @@ export const REPORT_STATUSES = ['open', 'investigating', 'resolved', 'dismissed'
 
 export const PRICE_PERIODS = ['bulan', 'tahun'] as const;
 export type PricePeriod = (typeof PRICE_PERIODS)[number];
+export const AVAILABILITIES = ['available', 'limited', 'unavailable', 'unknown'] as const;
+export const REACHABILITY_STATUSES = ['reachable', 'unverified', 'failed'] as const;
+export const BROKER_FEE_STATUSES = ['none', 'disclosed', 'undisclosed'] as const;
+export type ContactReachability = (typeof REACHABILITY_STATUSES)[number];
+export type Availability = (typeof AVAILABILITIES)[number];
+export type BrokerFeeStatus = (typeof BROKER_FEE_STATUSES)[number];
 export type ListingType = (typeof LISTING_TYPES)[number];
 export type Area = (typeof AREAS)[number];
 export type SubmitterType = (typeof SUBMITTER_ROLES)[number];
@@ -47,7 +53,11 @@ export type Listing = {
   title: string;
   type: ListingType;
   area: Area;
+  /** Private exact address. Never exposed publicly; shared by the submitter on WhatsApp after contact consent. */
   address: string;
+  /** Public, neighborhood-level label (e.g. "Timoho, Kec. Umbulharjo, Kota Jogja"). */
+  neighborhood_label: string;
+  /** Private exact coordinates. Public output only carries a jittered approximation. */
   map_latitude: number;
   map_longitude: number;
   /** Displayed price amount in IDR. Name is historical; the unit is given by price_period. */
@@ -60,6 +70,13 @@ export type Listing = {
   contact_whatsapp: string;
   source_url: string | null;
   role: SubmitterType;
+  /** 'unknown' must never be shown as available. */
+  availability: Availability;
+  /** Result of the admin-supervised WhatsApp reachability check. Never presented as a safety guarantee. */
+  contact_reachability_status: ContactReachability;
+  /** Only meaningful for brokers. 'disclosed' needs broker_fee_amount. */
+  broker_fee_status: BrokerFeeStatus;
+  broker_fee_amount: number | null;
   status: ListingStatus;
   owner_id: string;
   source: string;
@@ -136,9 +153,7 @@ export type PublicListing = Pick<
   | 'title'
   | 'type'
   | 'area'
-  | 'address'
-  | 'map_latitude'
-  | 'map_longitude'
+  | 'neighborhood_label'
   | 'price_monthly'
   | 'price_period'
   | 'deposit_information'
@@ -147,6 +162,16 @@ export type PublicListing = Pick<
   | 'contact_name'
   | 'contact_whatsapp'
   | 'role'
+  | 'availability'
+  | 'contact_reachability_status'
+  | 'broker_fee_status'
+  | 'broker_fee_amount'
   | 'last_confirmed_at'
   | 'expires_at'
->;
+>& {
+  /** Jittered point 300–500 m from the real location. The exact coordinates never leave the server. */
+  approx_latitude: number;
+  approx_longitude: number;
+  /** The real location is within this many meters of the shown point. */
+  approx_precision_m: number;
+};

@@ -11,6 +11,7 @@
 - Task 2 result: data contracts (`lib/data/types.ts`), rules for visibility/expiry/transitions (`lib/data/rules.ts`), dummy fixtures (`data/dummy-listings.ts`), read-only preview source (`lib/data/preview.ts`) rendered by `app/page.tsx`, and a dev/test-only SQLite adapter (`lib/data/dev-database.ts`, `node:sqlite`). No Supabase credentials needed; no write path in the preview. See `docs/DATA_MODEL.md`. Checks were run by the implementing agent, not independent QA.
 - Review fix (P1): declared Node.js `>=22.13.0` (`engines`, `.nvmrc`, `.npmrc` `engine-strict`) because `node:sqlite` is unavailable unflagged on older Node; documented in README and docs. Re-run by the implementing agent: typecheck, tests, build, audit.
 - Design handoff: `docs/DESIGN_OPTION_3_HANDOFF.md` (iteration 2 hard requirements, responsive visual acceptance, QA workflow) and the Option 3 reference are the source of truth. PR #2 implements Option 3, the blocking consent modal, the server-side 3-of-5 anonymous gate with demo unlock, and the sliced-asset pipeline (no generated images). Visual fixes after the QA review: listing cards no longer clip or split prices at 320–1440 px, and category/trust/warning/modal assets are visually separated from their parent surfaces. `design-qa.md` lists 133 PASS, 0 FAIL, 3 BLOCKED (cross-browser, screen reader, independent QA) with severities and 11 screenshots in `docs/qa-screenshots/`; the implementing-agent run was independently repeated in a clean worktree: build, typecheck, 28/28 unit tests, audit 0 vulnerabilities, and E2E exit 0 with 133 PASS/0 FAIL/3 BLOCKED, repeated twice. The remaining blocks are Firefox/WebKit and screen-reader environment limits; visual fidelity approval remains with the product owner. Lighthouse mobile 91 (consented). Demo sign-in is not real authentication. Not merged and not deployed by Claude Code; product-owner visual approval comes next.
+- Trust and discovery iteration (branch `claude/trust-discovery-iteration`, based on the PR #2 head; not merged, not deployed): all nine Product Owner-approved UI additions are implemented on the dummy/read-only preview — trust evidence badges, last-confirmed and availability rows, approximate map with Open in Maps, role badge and broker-fee transparency, report flow, "Jadwalkan survei" template, expanded filters and sorting, three-photo guidance, and a concise consent modal (consent version `2026-10-v2`). Details, assumptions, and what is not built: `docs/TRUST_AND_DISCOVERY.md`; funnel events: `docs/METRICS.md`; results: `design-qa.md`. Verification was run by the implementing agent, not independent QA.
 - Date: 2026-10-25.
 
 ## Open questions
@@ -21,12 +22,21 @@
 - [x] Expiry — hide automatically after 2 months; allow reconfirmation.
 - [x] Admin auth — start with one admin account using email plus WhatsApp reachability verification.
 - [x] WhatsApp verification scope — admin-supervised manual reachability check for MVP; automated OTP is deferred.
+- [ ] Report response SLA — the design requires an admin response SLA before launch; no value was given, so the preview states none.
+- [ ] Broker "relationship" disclosure — the design says brokers must disclose any fee or relationship; only the fee (none / disclosed amount / undisclosed) is modelled.
+- [ ] Price bands and sort options — below Rp 1 jt / Rp 1–2 jt / above Rp 2 jt per month (yearly kontrakan converted to monthly) and the four sort options were chosen by the implementer; confirm or replace.
+- [ ] Availability `unknown` on approved listings — allowed in the dummy data (labelled "Ketersediaan belum dikonfirmasi"); decide whether admin approval should require a known value.
+- [ ] Homepage copy — hero and trust-card wording were changed away from "dari pemilik langsung" and "terverifikasi" (the design flags both); confirm the new wording.
+- [ ] `LOCATION_JITTER_SECRET` — must be provisioned per environment before any real listing; the development fallback is public.
+- [ ] Analytics sink — preview events go to stdout only; choose a production sink, retention, and analytics consent.
 - [ ] Hosted production database/provider — must be selected and configured before public launch.
 - [ ] Map tile provider — the default public OSM tile server is development-only; choose a policy-compliant provider before production.
 
 ## Next step
 
-Complete the independent visual/code review and QA gate for PR #2, fix any P1/P2 findings, obtain product-owner visual approval, then resolve merge status and merge. Task 3 (auth and submitter workspace) needs a hosted auth provider decision; do not start it before that. Hosted database setup stays a public-launch prerequisite (`docs/PUBLIC_LAUNCH_DATABASE.md`).
+1. Independent review and QA of the trust and discovery branch (the 253 automated checks are the implementer's; cross-browser and screen-reader checks are BLOCKED here), then Product Owner visual approval of the new screens.
+2. Resolve the open questions above, then decide how this branch relates to PR #2 (merge order). Do not merge or deploy before visual approval and QA pass.
+3. Task 3 (auth and submitter workspace) still needs a hosted auth provider decision. Hosted database setup stays a public-launch prerequisite (`docs/PUBLIC_LAUNCH_DATABASE.md`).
 
 ## Decisions
 
@@ -45,6 +55,12 @@ Complete the independent visual/code review and QA gate for PR #2, fix any P1/P2
 - 2026-10-25 — Vercel preview uses non-sensitive dummy listings and read-only behavior until a hosted production database is configured.
 - 2026-10-25 — SQLite is for local development/tests only; a persistent hosted database is required before public submissions or public moderation.
 - 2026-10-25 — Iteration 2 requires a blocking anti-scam consent modal before browsing, anonymous users see exactly 3 of 5 public listings until signup/login, and Claude Code may only slice/polish committed image references; it may not generate new images.
+
+- 2026-10-25 — Public listing output never carries exact coordinates or the exact address; the map shows a point 300–500 m from the real location, derived with a server-side secret, plus a neighborhood label. User geolocation is optional, one-shot, in-memory, and never required for browsing.
+- 2026-10-25 — Trust badges may only state checks backed by a stored record, are never worded as a safety guarantee, and show missing checks as "belum" on the detail page.
+- 2026-10-25 — Roles are labelled "Pemilik" and "Agen"; broker fees are stated as declared and never collected by Ngekost Jogja.
+- 2026-10-25 — The anonymous 3-of-5 limit is a fixed launch rule. Consent completion, abandonment, and sign-up conversion are measured; safety consent is not A/B tested yet.
+- 2026-10-25 — The consent modal wording changed, so the consent version is `2026-10-v2` and earlier consent no longer counts.
 
 ## Requirements
 

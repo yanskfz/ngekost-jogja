@@ -1,26 +1,29 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, MapPin, MessageCircle } from 'lucide-react';
-import { Header } from '@/components/site/Header';
+import { ArrowLeft, CalendarCheck, MapPin } from 'lucide-react';
+import { ApproxMap } from '@/components/listings/ApproxMap';
+import { ContactActions } from '@/components/listings/ContactActions';
 import { FacilityIcon } from '@/components/listings/facility-icon';
-import { AntiScamWarning } from '@/components/trust/AntiScamWarning';
+import { listingPhoto, type PhotoSlot } from '@/components/listings/photos';
+import { TrustPanel } from '@/components/listings/TrustBadges';
+import { Header } from '@/components/site/Header';
+import { ListingGate } from '@/components/trust/ListingGate';
+import { PhotoGuidance } from '@/components/trust/PhotoGuidance';
 import { isDemoSignedIn } from '@/lib/auth/demo-session';
 import { canViewListing } from '@/lib/data/access';
 import { getPreviewDetail, listPreviewCards } from '@/lib/data/preview';
-import { ListingGate } from '@/components/trust/ListingGate';
-import { LISTING_PHOTOS } from '@/components/listings/photos';
+import { AVAILABILITY_LABEL, ROLE_LABEL, brokerFeeNote, formatDateId, formatRupiah } from '@/lib/format';
+import { getReportedIds } from '@/lib/reporting/cookie';
+import { consentMissing } from '@/lib/safety/consent';
 import { areaLabel } from '@/lib/search/listings';
 
-import { consentMissing } from '@/lib/safety/consent';
-
 export const dynamic = 'force-dynamic';
-
-const rupiah = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
 
 export default async function ListingPage({ params }: { params: Promise<{ id: string }> }) {
   if (await consentMissing()) return null;
   const { id } = await params;
-  const publicListings = listPreviewCards();
+  const reported = await getReportedIds();
+  const publicListings = listPreviewCards(new Date(), reported);
   if (!publicListings.some((l) => l.id === id)) notFound();
   // Server-side gate: a locked listing's data is never read, so direct URLs cannot expose it.
   if (!canViewListing(publicListings, id, await isDemoSignedIn())) {
@@ -37,11 +40,11 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
       </>
     );
   }
-  const detail = getPreviewDetail(id);
+  const detail = getPreviewDetail(id, new Date(), reported);
   if (!detail) notFound();
-  const { listing, contactWhatsapp, imageCount } = detail;
-  const photo = LISTING_PHOTOS[listing.type];
-  const waNumber = contactWhatsapp?.replace(/\D/g, '');
+  const { listing, contactWhatsapp, imageCount, evidence, confirmed_label } = detail;
+  const fee = brokerFeeNote(listing.role, listing.broker_fee_status, listing.broker_fee_amount);
+  const availableOk = listing.availability === 'available' || listing.availability === 'limited';
 
   return (
     <>
@@ -53,50 +56,71 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
         <h1>{listing.title}</h1>
         <p className="card__meta">
           <span className={`tag tag--${listing.type}`}>{listing.type === 'kost' ? 'Kost' : 'Kontrakan'}</span>
+          <span className={`tag tag--role tag--${listing.role}`}>{ROLE_LABEL[listing.role]}</span>
           <span className="card__area">
-            <MapPin size={14} aria-hidden="true" /> {areaLabel(listing.area)} · {listing.address}
+            <MapPin size={14} aria-hidden="true" /> {areaLabel(listing.area)} · {listing.neighborhood_label}
           </span>
         </p>
-        <div className="gallery">
-          {Array.from({ length: imageCount }, (_, i) => (
-            <img
-              key={i}
-              src={photo.src}
-              alt={`Foto ${i + 1} dari ${imageCount}`}
-              width={photo.width}
-              height={photo.height}
-              loading={i === 0 ? 'eager' : 'lazy'}
-              decoding="async"
-            />
-          ))}
+        <div className="gallery" data-testid="gallery">
+          {Array.from({ length: imageCount }, (_, i) => {
+            const slot = (i + 1) as PhotoSlot;
+            const photo = listingPhoto(listing.type, slot);
+            return (
+              <img
+                key={slot}
+                src={photo.src}
+                alt={`Foto contoh ${slot} dari ${imageCount}`}
+                width={photo.width}
+                height={photo.height}
+                loading={slot === 1 ? 'eager' : 'lazy'}
+                decoding="async"
+              />
+            );
+          })}
         </div>
         <p className="card__price">
-          <span className="card__amount">{rupiah.format(listing.price_monthly)}</span> <span className="card__period">/ {listing.price_period}</span>
+          <span className="card__amount">{formatRupiah(listing.price_monthly)}</span> <span className="card__period">/ {listing.price_period}</span>
         </p>
         {listing.deposit_information ? <p>{listing.deposit_information}</p> : null}
+
+        <section className="status-panel" aria-label="Status listing" data-testid="status-panel">
+          <p>
+            <span className={`avail avail--${availableOk ? 'ok' : 'muted'}`}>{AVAILABILITY_LABEL[listing.availability]}</span>
+          </p>
+          <p>
+            <CalendarCheck size={16} aria-hidden="true" />{' '}
+            {listing.last_confirmed_at ? `Terakhir dikonfirmasi ${formatDateId(listing.last_confirmed_at)} (${confirmed_label.replace('Dikonfirmasi ', '')})` : 'Belum dikonfirmasi'}
+          </p>
+          {listing.expires_at ? <p>Tayang sampai {formatDateId(listing.expires_at)} kecuali dikonfirmasi ulang.</p> : null}
+          <p className={`card__fee card__fee--${fee.tone}`} data-testid="fee-note">
+            {ROLE_LABEL[listing.role]}: {fee.text}
+          </p>
+        </section>
+
+        <TrustPanel items={evidence} />
+        <PhotoGuidance />
+
         <h2>Fasilitas</h2>
-        <ul className="facilities">
-          {listing.facilities.map((f) => (
-            <li key={f}>
-              <FacilityIcon name={f} /> {f}
-            </li>
-          ))}
-        </ul>
+        {listing.facilities.length > 0 ? (
+          <ul className="facilities">
+            {listing.facilities.map((f) => (
+              <li key={f}>
+                <FacilityIcon name={f} /> {f}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>Fasilitas belum dicantumkan.</p>
+        )}
         <h2>Kondisi</h2>
         <p>{listing.condition_details}</p>
         <p>
-          Dipasang oleh {listing.role === 'owner' ? 'pemilik' : 'makelar'} · Kontak: {listing.contact_name}
+          Dipasang oleh {listing.role === 'owner' ? 'pemilik' : 'agen'} · Kontak: {listing.contact_name}
         </p>
 
-        <AntiScamWarning id="detail-warning" />
+        <ApproxMap point={{ latitude: listing.approx_latitude, longitude: listing.approx_longitude }} precisionM={listing.approx_precision_m} label={listing.neighborhood_label} />
 
-        {waNumber ? (
-          <a className="button button--wa" href={`https://wa.me/${waNumber}`} rel="noopener noreferrer" target="_blank">
-            <MessageCircle size={20} aria-hidden="true" /> Hubungi via WhatsApp
-          </a>
-        ) : (
-          <p className="notice">Pemasang belum mengizinkan kontak lewat WhatsApp untuk listing ini.</p>
-        )}
+        <ContactActions listingId={listing.id} title={listing.title} neighborhood={listing.neighborhood_label} contactName={listing.contact_name} whatsapp={contactWhatsapp} />
         <p className="notice" role="note">
           Preview dengan data contoh: nomor WhatsApp adalah nomor dummy dan tidak ada data yang disimpan.
         </p>

@@ -7,7 +7,7 @@ import { chromium } from 'playwright';
 const PORT = process.env.QA_PORT ?? '3210';
 const BASE = `http://localhost:${PORT}`;
 const axeSource = readFileSync(new URL('../../node_modules/axe-core/axe.min.js', import.meta.url), 'utf8');
-const CONSENT = { name: 'nk_safety_consent', value: '2026-10-v1', url: BASE };
+const CONSENT = { name: 'nk_safety_consent', value: '2026-10-v2', url: BASE };
 const results = [];
 // Severity: P0 security/data exposure or app unavailable; P1 core journey broken or content clipped;
 // P2 meaningful visual/accessibility/coverage issue; P3 polish. Assigned by check type, overridable per call.
@@ -29,7 +29,10 @@ const SHOTS = new URL('../../docs/qa-screenshots/', import.meta.url).pathname;
 mkdirSync(SHOTS, { recursive: true });
 
 try { await fetch(BASE); console.error(`Port ${PORT} is already in use; refusing to test a stale server.`); process.exit(2); } catch {}
-const server = spawn('npx', ['next', 'start', '-p', PORT], { stdio: 'ignore', detached: true, env: { ...process.env, QA_FIXTURES: '1' } });
+const serverLog = [];
+const server = spawn('npx', ['next', 'start', '-p', PORT], { stdio: ['ignore', 'pipe', 'ignore'], detached: true, env: { ...process.env, QA_FIXTURES: '1' } });
+server.stdout.on('data', (chunk) => serverLog.push(...String(chunk).split('\n').filter(Boolean)));
+const loggedEvents = () => serverLog.flatMap((line) => { try { const o = JSON.parse(line); return o.type === 'nk_event' ? [o] : []; } catch { return []; } });
 const stop = () => { try { process.kill(-server.pid); } catch {} };
 process.on('exit', stop);
 for (let i = 0; i < 60; i++) {
@@ -147,7 +150,7 @@ try {
     for (let i = 0; i < 6; i++) { await page.keyboard.press('Shift+Tab'); trapped &&= await page.evaluate(() => !!document.activeElement?.closest('[role=dialog]')); }
     record('Keyboard focus stays inside the modal (Tab and Shift+Tab)', trapped);
     await page.getByText('Baca panduan lengkap').click();
-    record('"Baca panduan lengkap" expands the full guidance', await page.getByText('Verifikasi pemilik atau makelar secara mandiri').isVisible());
+    record('"Baca panduan lengkap" expands the full guidance', await page.getByText('Verifikasi pemilik atau agen secara mandiri').isVisible());
     await page.getByText('Baca panduan lengkap').click();
     record('Modal fits 390x844 without horizontal overflow', !(await overflow(page)));
     await shot(page, '01-modal-390.png');
@@ -300,6 +303,7 @@ try {
   await fav.click();
   record('Favorite heart toggles pressed state', (await fav.getAttribute('aria-pressed')) === 'true');
   await page.reload();
+  await page.waitForFunction(() => document.querySelector('[aria-label="Simpan Kost Puri Timoho"]')?.getAttribute('aria-pressed') === 'true', null, { timeout: 5000 }).catch(() => {});
   record('Favorite persists in this browser only (localStorage)', (await page.getByRole('button', { name: 'Simpan Kost Puri Timoho' }).getAttribute('aria-pressed')) === 'true');
   await page.getByRole('button', { name: 'Simpan Kost Puri Timoho' }).click();
   await page.getByLabel('Menu', { exact: true }).click();
@@ -314,7 +318,7 @@ try {
   await shot(page, '05-detail-390.png');
   record('Detail page shows title, price and 3 photos', (await page.locator('h1').innerText()).includes('Timoho') && (await page.locator('.gallery img').count()) === 3);
   record('Detail shows the anti-scam warning before the WhatsApp action', await page.locator('#detail-warning').isVisible());
-  record('Detail shows WhatsApp CTA (consent granted)', (await page.locator('a[href^="https://wa.me/"]').count()) === 1);
+  record('Detail shows the survey and WhatsApp CTAs (consent granted)', (await page.locator('a[href^="https://wa.me/"]').count()) === 2 && (await page.getByTestId('survey-cta').count()) === 1 && (await page.getByTestId('wa-cta').count()) === 1);
   record('Warning appears before the WhatsApp CTA in DOM order', await page.evaluate(() => {
     const w = document.querySelector('#detail-warning'); const a = document.querySelector('a[href^="https://wa.me/"]');
     return !!(w && a && (w.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_FOLLOWING));
@@ -333,7 +337,7 @@ try {
     const el = document.activeElement; if (!el || el === document.body) return false;
     const cs = getComputedStyle(el); return cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) >= 2;
   }));
-  const small = await page.evaluate(() => [...document.querySelectorAll('a, button, summary, input')]
+  const small = await page.evaluate(() => [...document.querySelectorAll('a, button, summary, input:not([type=checkbox]):not([type=radio])')]
     .filter((e) => !e.closest('.menu nav') && !e.classList.contains('card__anchor') && e.getBoundingClientRect().width > 0)
     .map((e) => ({ t: (e.textContent || e.getAttribute('aria-label') || e.tagName).trim().slice(0, 30), h: e.getBoundingClientRect().height, w: e.getBoundingClientRect().width }))
     .filter((e) => e.h < 44 && e.w < 44 || e.h < 40));
@@ -348,12 +352,419 @@ try {
     record(`axe WCAG A/AA: ${path}`, bad.length === 0, bad.join(', '));
   }
 
+  // ===== Trust and discovery iteration (9 approved additions) =====
+  const EXACT = { 'lst-1': { lat: -7.8014, lng: 110.3896, address: 'Jl. Timoho Contoh' }, 'lst-2': { lat: -7.7681, lng: 110.3777, address: 'Jl. Depok Contoh' }, 'lst-3': { lat: -7.7829, lng: 110.3671, address: 'Jl. Contoh Anggrek' } };
+  const hav = (a, b) => {
+    const R = 6371008.8, rad = (d) => (d * Math.PI) / 180;
+    const h = Math.sin(rad(b.lat - a.lat) / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(rad(b.lng - a.lng) / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  };
+  const idsOnPage = (p) => p.locator('[data-testid=listing-card]').evaluateAll((els) => els.map((e) => e.getAttribute('data-listing-id')));
+  const smallTargets = (p) => p.evaluate(() => [...document.querySelectorAll('a, button, summary, select, textarea, input[type=text], input[type=search]')]
+    .filter((e) => !e.closest('.menu nav') && !e.closest('.hp') && !e.classList.contains('card__anchor') && e.getBoundingClientRect().width > 0)
+    .map((e) => ({ t: (e.textContent || e.getAttribute('aria-label') || e.tagName).trim().slice(0, 28), h: Math.round(e.getBoundingClientRect().height), w: Math.round(e.getBoundingClientRect().width) }))
+    .filter((e) => e.h < 44 && e.w < 44 || e.h < 40));
+  const signIn = async (p) => { await p.goto(`${BASE}/masuk`); await p.getByRole('button', { name: 'Masuk / Daftar (demo)' }).click(); await p.waitForFunction(() => document.querySelectorAll('.cards > li').length === 5); };
+
+  // --- 1/2/4: evidence, freshness, availability, role, broker fee on cards
+  {
+    const p = await newPage();
+    await p.goto(BASE);
+    const card = (id) => p.locator(`[data-listing-id="${id}"]`);
+    const ev = (await card('lst-1').locator('.trust-row li').allInnerTexts()).map((t) => t.trim());
+    record('Evidence row: card shows exactly the five checks the record supports, in order', JSON.stringify(ev) === JSON.stringify(['3 foto', 'WA bisa dihubungi', 'Email', 'Ditinjau admin', 'Izin tayang']), ev.join(' | '), 'P1');
+    record('Role badge: Pemilik on owner card, Agen on broker card', (await card('lst-1').locator('.tag--role').innerText()) === 'Pemilik' && (await card('lst-2').locator('.tag--role').innerText()) === 'Agen', '', 'P1');
+    const st = async (id) => (await card(id).locator('.card__status').innerText()).replace(/\s+/g, ' ');
+    const s1 = await st('lst-1'), s2 = await st('lst-2'), s3 = await st('lst-3');
+    record('Freshness and availability row on every card', /Tersedia/.test(s1) && /Dikonfirmasi 10 hari lalu/.test(s1) && /Ketersediaan belum dikonfirmasi/.test(s2) && /Dikonfirmasi 30 hari lalu/.test(s2) && /Tersisa sedikit/.test(s3) && /Dikonfirmasi 1 bulan lalu/.test(s3), `${s1} | ${s2} | ${s3}`, 'P1');
+    record('Availability "unknown" is not styled or worded as available', (await card('lst-2').locator('.avail--muted').count()) === 1 && (await card('lst-2').locator('.avail--ok').count()) === 0 && !/^Tersedia/.test(s2), '', 'P1');
+    const fee2 = await card('lst-2').locator('.card__fee').innerText();
+    record('Broker-fee transparency: agen card states the fee and that Ngekost does not collect it; owner card has no fee line', /1\.500\.000/.test(fee2) && /tidak memungut/.test(fee2) && (await card('lst-1').locator('.card__fee').count()) === 0, fee2, 'P1');
+    const bodyHtml = await p.content();
+    record('Cards expose a neighborhood label, never the exact address or exact coordinates', Object.values(EXACT).every((e) => !bodyHtml.includes(e.address) && !bodyHtml.includes(String(e.lat)) && !bodyHtml.includes(String(e.lng))) && /Timoho, Kec\. Umbulharjo/.test(bodyHtml), '', 'P0');
+    await shot(p, '10-cards-evidence-390.png', p.locator('.cards'));
+    const tt = await smallTargets(p);
+    record('Touch targets on the filtered homepage (filter panel, location button, chips) are ~44px', tt.length === 0, tt.map((s) => `${s.t}:${s.h}`).join(', '), 'P2');
+    await p.context().close();
+  }
+
+  // --- 1/2/3/4/8: detail page
+  {
+    const p = await newPage();
+    const osm = [];
+    p.on('request', (r) => { if (/openstreetmap\.org/.test(r.url())) osm.push(r.url()); });
+    await p.route(/openstreetmap\.org\/export\/embed/, (route) => route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>map stub</title><p>stub</p>' }));
+    await p.goto(`${BASE}/listing/lst-2`);
+    const status = (await p.getByTestId('status-panel').innerText()).replace(/\s+/g, ' ');
+    record('Detail: availability, last-confirmed date, and expiry are shown (unknown availability is not "Tersedia")', /Ketersediaan belum dikonfirmasi/.test(status) && /Terakhir dikonfirmasi \d{1,2} \S+ 2026 \(30 hari lalu\)/.test(status) && /Tayang sampai \d{1,2} \S+ 2026/.test(status), status, 'P1');
+    record('Detail: broker-fee note names the role and the amount', /Agen:.*1\.500\.000/.test(await p.getByTestId('fee-note').innerText()), '', 'P1');
+    record('Detail: trust panel lists 5 checks as ok and carries the non-guarantee disclaimer', (await p.locator('.trust-panel li.is-ok').count()) === 5 && /bukan jaminan keamanan/.test(await p.locator('.trust-panel').innerText()), '', 'P1');
+    await shot(p, '11-detail-trust-390.png', p.locator('main'));
+    // map
+    record('Map: approximate-area preview renders without any request to a map provider', (await p.locator('.map svg[role=img]').isVisible()) && (await p.locator('.map iframe').count()) === 0 && osm.length === 0, osm.join(','), 'P1');
+    const links = await p.locator('.map__actions a').evaluateAll((as) => as.map((a) => ({ href: a.href, target: a.target, rel: a.rel })));
+    const osmLink = new URL(links.find((l) => /openstreetmap/.test(l.href)).href);
+    const approx = { lat: Number(osmLink.searchParams.get('mlat')), lng: Number(osmLink.searchParams.get('mlon')) };
+    const dist = hav(EXACT['lst-2'], approx);
+    record('Map: the shown point is 300–500 m from the real location and is not the real location', dist >= 300 && dist <= 500, `${Math.round(dist)} m`, 'P0');
+    record('Map: "Buka di OpenStreetMap" and "Buka di Google Maps" open the same approximate point in a new tab safely', links.length === 2 && links.every((l) => l.target === '_blank' && /noopener/.test(l.rel)) && new URL(links[1].href).searchParams.get('query') === `${approx.lat.toFixed(4)},${approx.lng.toFixed(4)}`, '', 'P1');
+    record('Map: no link, attribute, or script payload on the page carries the exact coordinates or private address', !(await p.content()).includes(String(EXACT['lst-2'].lat)) && !(await p.content()).includes(String(EXACT['lst-2'].lng)) && !(await p.content()).includes(EXACT['lst-2'].address), '', 'P0');
+    await p.getByRole('button', { name: 'Tampilkan peta' }).click();
+    const frame = p.locator('.map iframe');
+    await frame.waitFor();
+    const src = await frame.getAttribute('src');
+    record('Map: tapping "Tampilkan peta" loads an OpenStreetMap embed centred on the approximate point only', /^https:\/\/www\.openstreetmap\.org\/export\/embed\.html\?/.test(src) && !src.includes(String(EXACT['lst-2'].lat)) && !src.includes(String(EXACT['lst-2'].lng)) && (await frame.getAttribute('title')).includes('Depok') && (await p.getByRole('button', { name: 'Sembunyikan peta' }).getAttribute('aria-expanded')) === 'true', src, 'P1');
+    await shot(p, '12-detail-map-390.png', p.locator('.map'));
+    const me = await edgeContrast(p, p.locator('.map__frame'));
+    record('Asset boundary: the map frame is visually separated from the page (min edge colour distance >= 18)', Math.min(...Object.values(me)) >= 18, JSON.stringify(me), 'P2');
+    await p.getByRole('button', { name: 'Sembunyikan peta' }).click();
+    record('Map: hiding the map removes the frame again', (await p.locator('.map iframe').count()) === 0, '', 'P2');
+    // survey + contact
+    const surveyHref = await p.getByTestId('survey-cta').getAttribute('href');
+    const surveyText = new URL(surveyHref).searchParams.get('text');
+    record('Survey template: "Jadwalkan survei" opens WhatsApp with a prefilled visit request (title, contact, neighborhood) and no payment', surveyHref.startsWith('https://wa.me/6280000000102?text=') && /Rumah Kontrakan Sari Asri/.test(surveyText) && /Kontak Contoh 2/.test(surveyText) && /Depok, Kec\. Sleman/.test(surveyText) && /survei langsung/.test(surveyText) && /belum akan membayar/.test(surveyText) && !/rp\s?\d|deposit|rekening|booking/i.test(surveyText), surveyHref.slice(0, 60), 'P0');
+    await p.getByText('Lihat pesan survei').click();
+    record('Survey template: the exact message can be read before sending', (await p.getByTestId('survey-text').innerText()).trim() === surveyText.trim(), '', 'P2');
+    record('Survey and WhatsApp actions are separate, safe links; warning comes first in DOM order', (await p.getByTestId('wa-cta').getAttribute('href')) === 'https://wa.me/6280000000102' && (await p.evaluate(() => {
+      const w = document.querySelector('#detail-warning'); const s = document.querySelector('[data-testid=survey-cta]'); const a = document.querySelector('[data-testid=wa-cta]');
+      return !!(w.compareDocumentPosition(s) & Node.DOCUMENT_POSITION_FOLLOWING) && !!(w.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_FOLLOWING);
+    })) && (await p.locator('[data-testid=survey-cta], [data-testid=wa-cta]').evaluateAll((as) => as.every((a) => a.target === '_blank' && /noopener/.test(a.rel)))), '', 'P0');
+    // photos
+    const srcs = await p.locator('[data-testid=gallery] img').evaluateAll((imgs) => imgs.map((i) => i.getAttribute('src')));
+    for (const i of await p.locator('[data-testid=gallery] img').all()) await i.scrollIntoViewIfNeeded();
+    await p.waitForFunction(() => [...document.querySelectorAll('[data-testid=gallery] img')].every((i) => i.complete && i.naturalWidth > 0));
+    record('Photos: the gallery shows three different image files and all of them load', srcs.length === 3 && new Set(srcs).size === 3, srcs.join(','), 'P1');
+    const overlay = await p.evaluate(async () => {
+      const files = ['photo-kost', 'photo-kost-2', 'photo-kost-3', 'photo-kontrakan', 'photo-kontrakan-2', 'photo-kontrakan-3'];
+      const out = {};
+      for (const f of files) {
+        const bmp = await createImageBitmap(await (await fetch(`/images/${f}.webp`)).blob());
+        const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+        const x = c.getContext('2d'); x.drawImage(bmp, 0, 0);
+        const w = Math.min(56, bmp.width), h = Math.min(56, bmp.height);
+        const d = x.getImageData(bmp.width - w, 0, w, h).data; let white = 0;
+        for (let i = 0; i < d.length; i += 4) if (d[i] > 245 && d[i + 1] > 245 && d[i + 2] > 245) white++;
+        out[f] = +(white / (w * h)).toFixed(2);
+      }
+      return out;
+    });
+    record('Photo assets contain no baked-in UI: the mockup heart overlay (white disc) is absent from every photo corner', Object.values(overlay).every((v) => v < 0.08), JSON.stringify(overlay), 'P1');
+    await p.getByText('Cek foto sebelum survei').focus();
+    await p.keyboard.press('Enter');
+    const gtxt = await p.locator('.guidance').innerText();
+    record('Photo guidance: keyboard-operable, names the three photo slots and the "three different photos" rule', /Kamar atau ruang utama/.test(gtxt) && /Kamar mandi, dapur, atau fasilitas/.test(gtxt) && /Tampak depan dan lingkungan/.test(gtxt) && /Tiga foto harus berbeda/.test(gtxt) && /Laporkan listing/.test(gtxt), '', 'P2');
+    record('Detail: a report link is available', (await p.getByRole('link', { name: 'Laporkan listing ini' }).getAttribute('href')) === '/listing/lst-2/laporkan', '', 'P1');
+    const dt = await smallTargets(p);
+    record('Touch targets on the detail page are ~44px', dt.length === 0, dt.map((s) => `${s.t}:${s.h}`).join(', '), 'P2');
+    const dv = await axeViolations(p);
+    record('axe WCAG A/AA: detail page with map open state and guidance expanded', dv.length === 0, dv.join(', '), 'P2');
+    await p.context().close();
+  }
+
+  // --- detail: owner variation, locked listing has no contact surface, privacy of the raw response
+  {
+    const p = await newPage();
+    await p.goto(`${BASE}/listing/lst-1`);
+    record('Detail (owner): fee note says owner direct, no broker fee', /Pemilik: Pemilik langsung, tanpa biaya makelar/.test(await p.getByTestId('fee-note').innerText()), '', 'P2');
+    for (const id of ['lst-1', 'lst-2', 'lst-3']) {
+      const raw = await (await p.request.get(`${BASE}/listing/${id}`)).text();
+      record(`Privacy: raw response for /listing/${id} contains no exact coordinates, private address, owner id, or source`, !raw.includes(String(EXACT[id].lat)) && !raw.includes(String(EXACT[id].lng)) && !raw.includes(EXACT[id].address) && !/owner_id|acc-owner|acc-broker|dummy-fixture/.test(raw), '', 'P0');
+    }
+    const lockedRaw = await (await p.request.get(`${BASE}/listing/lst-9`)).text();
+    record('Locked listing page has no contact, survey, map, or report surface', !/wa\.me|survey-cta|class="map"|laporkan/.test(lockedRaw) && !/Cempaka/.test(lockedRaw), '', 'P0');
+    const qd = await newPage();
+    await qd.goto(`${BASE}/qa/detail`);
+    record('Missing-data detail: unverified evidence reads "belum", no contact consent hides survey/WhatsApp, report link stays', (await qd.locator('.trust-panel li.is-missing').count()) === 5 && (await qd.getByTestId('survey-cta').count()) === 0 && /belum mengizinkan kontak/.test(await qd.locator('main').innerText()) && (await qd.getByRole('link', { name: 'Laporkan listing ini' }).count()) === 1, '', 'P1');
+    await shot(qd, '15-qa-detail-390.png', qd.locator('main'));
+    record('Long-content detail has no horizontal overflow at 390px', !(await overflow(qd)), '', 'P1');
+    const qv = await axeViolations(qd);
+    record('axe WCAG A/AA: detail page with nothing verified and long text', qv.length === 0, qv.join(', '), 'P2');
+    await qd.context().close();
+    await p.context().close();
+  }
+
+  // --- 5: report listing flow
+  {
+    const p = await newPage();
+    await p.goto(`${BASE}/listing/lst-1/laporkan`);
+    record('Report form: five reasons, optional detail and contact, labelled controls, demo notice', (await p.getByRole('radio').count()) === 5 && (await p.getByLabel('Keterangan (opsional)').count()) === 1 && (await p.getByLabel('Kontak kamu (opsional)').count()) === 1 && /Mode demo/.test(await p.locator('main').innerText()), '', 'P1');
+    await shot(p, '14-report-form-390.png', p.locator('main'));
+    const labels = (await p.locator('fieldset label').allInnerTexts()).map((t) => t.trim());
+    record('Report form: reasons match the product policy', JSON.stringify(labels) === JSON.stringify(['Dugaan penipuan', 'Lokasi tidak sesuai', 'Sudah tidak tersedia', 'Harga menyesatkan', 'Konten tidak pantas atau penyalahgunaan']), labels.join(' | '), 'P1');
+    const rt = await smallTargets(p);
+    record('Touch targets on the report form are ~44px', rt.length === 0, rt.map((s) => `${s.t}:${s.h}`).join(', '), 'P2');
+    const rv = await axeViolations(p);
+    record('axe WCAG A/AA: report form', rv.length === 0, rv.join(', '), 'P2');
+    // negative: submit with no reason (browser validation bypassed)
+    await p.evaluate(() => document.querySelectorAll('[required]').forEach((e) => e.removeAttribute('required')));
+    await p.getByRole('button', { name: 'Kirim laporan' }).click();
+    await p.getByTestId('report-error').waitFor();
+    record('Report negative: missing reason is rejected server-side with a clear message and nothing is hidden', (await p.getByTestId('report-error').innerText()) === 'Pilih alasan laporan.', '', 'P1');
+    await p.goto(BASE);
+    record('Report negative: the listing is still visible after a rejected report', (await idsOnPage(p)).includes('lst-1'), '', 'P1');
+    // negative: over-long detail and contact
+    await p.goto(`${BASE}/listing/lst-1/laporkan`);
+    await p.evaluate(() => { document.querySelectorAll('[required]').forEach((e) => e.removeAttribute('required')); document.querySelectorAll('[maxlength]').forEach((e) => e.removeAttribute('maxlength')); });
+    await p.getByLabel('Dugaan penipuan').check();
+    await p.getByLabel('Keterangan (opsional)').fill('x'.repeat(501));
+    await p.getByRole('button', { name: 'Kirim laporan' }).click();
+    await p.getByTestId('report-error').waitFor();
+    record('Report negative: 501-character detail is rejected server-side', /maksimal 500/.test(await p.getByTestId('report-error').innerText()), '', 'P2');
+    // negative: honeypot gets a normal-looking page and no effect
+    await p.goto(`${BASE}/listing/lst-1/laporkan`);
+    await p.getByLabel('Harga menyesatkan').check();
+    await p.evaluate(() => { document.querySelector('input[name=website]').value = 'http://spam.test'; });
+    await p.getByRole('button', { name: 'Kirim laporan' }).click();
+    await p.getByTestId('report-confirmation').waitFor();
+    await p.goto(BASE);
+    record('Report negative: a filled honeypot looks successful but hides nothing', (await idsOnPage(p)).includes('lst-1'), '', 'P2');
+    // negative: forged ids cannot report or probe locked / unknown listings
+    await p.goto(`${BASE}/listing/lst-3/laporkan`);
+    await p.getByLabel('Lokasi tidak sesuai').check();
+    await p.evaluate(() => { document.querySelector('input[name=listing_id]').value = 'lst-9'; });
+    await p.getByRole('button', { name: 'Kirim laporan' }).click();
+    await p.waitForURL((u) => u.pathname === '/');
+    await p.goto(`${BASE}/listing/lst-3/laporkan`);
+    await p.getByLabel('Lokasi tidak sesuai').check();
+    await p.evaluate(() => { document.querySelector('input[name=listing_id]').value = 'lst-1; DROP TABLE'; });
+    await p.getByRole('button', { name: 'Kirim laporan' }).click();
+    await p.waitForURL((u) => u.pathname === '/');
+    const probe = await (await browser.newContext()).newPage();
+    await probe.context().addCookies([CONSENT]);
+    record('Report negative: locked, unknown, and malformed listing ids are bounced without effect', (await idsOnPage(p)).join() === 'lst-1,lst-2,lst-3' && (await (await probe.request.get(`${BASE}/listing/lst-9/laporkan`)).status()) === 404 && (await (await probe.request.get(`${BASE}/listing/lst-77/laporkan`)).status()) === 404 && (await (await probe.request.get(`${BASE}/listing/not-an-id/laporkan`)).status()) === 404, '', 'P0');
+    // happy path: valid report hides the listing at once for this visitor
+    await p.goto(`${BASE}/listing/lst-1/laporkan`);
+    await p.getByLabel('Dugaan penipuan').check();
+    await p.getByLabel('Keterangan (opsional)').fill('Foto sama dengan iklan lain.');
+    await p.getByRole('button', { name: 'Kirim laporan' }).click();
+    await p.getByTestId('report-confirmation').waitFor();
+    const conf = await p.locator('main').innerText();
+    record('Report happy path: confirmation says the listing is hidden and is honest that the demo sends nothing', /disembunyikan dari hasil pencarianmu/.test(conf) && /tidak dikirim atau disimpan di server/.test(conf), '', 'P1');
+    await p.goto(BASE);
+    const afterIds = await idsOnPage(p);
+    record('Report happy path: the reported listing leaves the results immediately; the 3-of-5 rule re-applies to the remaining four', afterIds.join() === 'lst-2,lst-3,lst-9' && /1 listing lainnya terkunci/.test(await p.getByTestId('listing-gate').innerText()), afterIds.join(), 'P1');
+    record('Report happy path: its direct URL and report page now 404 for this visitor', (await p.request.get(`${BASE}/listing/lst-1`)).status() === 404 && (await p.request.get(`${BASE}/listing/lst-1/laporkan`)).status() === 404, '', 'P1');
+    record('Report happy path: reporting again (confirmation URL replay) is idempotent', (await p.goto(`${BASE}/listing/lst-1/laporkan?status=ok`)).status() === 200 && (await p.getByTestId('report-confirmation').count()) === 1, '', 'P2');
+    const cv = await axeViolations(p);
+    record('axe WCAG A/AA: report confirmation', cv.length === 0, cv.join(', '), 'P2');
+    await probe.context().close();
+    await p.context().close();
+  }
+
+  // --- 7: expanded filters and sorting (anonymous = first three listings; signed in = all five)
+  {
+    const p = await newPage();
+    await p.goto(BASE);
+    const panel = p.locator('details.filters');
+    record('Filters: the panel is collapsed by default and opens by keyboard', !(await panel.evaluate((d) => d.open)), '', 'P2');
+    await p.getByText('Filter & urutkan').focus();
+    await p.keyboard.press('Enter');
+    await shot(p, '13-filter-panel-390.png', panel);
+    record('Filters: every control has a visible label (price, facilities, role, availability, sort)', (await p.getByLabel('Harga per bulan').count()) === 1 && (await p.getByLabel('Pemasang iklan').count()) === 1 && (await p.getByLabel('Urutkan', { exact: true }).count()) === 1 && (await p.getByLabel('WiFi').count()) === 1 && (await p.getByLabel('Hanya yang masih tersedia').count()) === 1, '', 'P2');
+    await p.getByLabel('Pemasang iklan').selectOption('broker');
+    await p.getByRole('button', { name: 'Terapkan' }).click();
+    await p.waitForURL(/role=broker/);
+    record('Filters: role "Agen" shows only broker listings among the allowed set', (await idsOnPage(p)).join() === 'lst-2', '', 'P1');
+    record('Filters: the open panel shows the active-filter count and keeps the choice', /Filter & urutkan \(1\)/.test(await p.locator('details.filters summary').innerText()) && (await p.getByLabel('Pemasang iklan').inputValue()) === 'broker' && (await p.locator('details.filters').evaluate((d) => d.open)), '', 'P2');
+    await p.goto(`${BASE}/?fac=wifi`);
+    record('Filters: facility WiFi', (await idsOnPage(p)).join() === 'lst-1,lst-3', '', 'P1');
+    await p.goto(`${BASE}/?fac=wifi&fac=ac`);
+    record('Filters: facilities combine with AND (WiFi + AC)', (await idsOnPage(p)).join() === 'lst-1', '', 'P1');
+    await p.goto(`${BASE}/?avail=1`);
+    record('Filters: "masih tersedia" excludes unknown and unavailable listings', (await idsOnPage(p)).join() === 'lst-1,lst-3', '', 'P1');
+    await p.goto(`${BASE}/?price=1to2`);
+    record('Filters: price band 1–2 jt compares yearly kontrakan on a monthly basis', (await idsOnPage(p)).join() === 'lst-1,lst-2,lst-3', '', 'P1');
+    await p.goto(`${BASE}/?price=lt1`);
+    record('Filters: no match shows the empty state, the gate stays, and a reset link works', (await p.locator('.empty').isVisible()) && (await p.getByTestId('listing-gate').count()) === 1, '', 'P1');
+    await p.getByRole('link', { name: 'Hapus pencarian' }).click();
+    await p.waitForURL((u) => !u.search);
+    record('Filters: reset restores the three allowed listings', (await idsOnPage(p)).length === 3, '', 'P2');
+    await p.goto(`${BASE}/?sort=price_desc`);
+    record('Sort: highest price first (monthly basis)', (await idsOnPage(p)).join() === 'lst-2,lst-1,lst-3', '', 'P1');
+    await p.goto(`${BASE}/?sort=price_asc`);
+    record('Sort: lowest price first', (await idsOnPage(p)).join() === 'lst-3,lst-1,lst-2', '', 'P1');
+    await p.goto(`${BASE}/?sort=recent`);
+    record('Sort: most recently confirmed first', (await idsOnPage(p)).join() === 'lst-1,lst-2,lst-3', '', 'P1');
+    await p.goto(`${BASE}/?price=bogus&sort=bogus&role=admin&fac=bogus&avail=9`);
+    record('Filters negative: invalid parameter values are ignored, not errors', (await idsOnPage(p)).length === 3 && !(await p.locator('details.filters').evaluate((d) => d.open)), '', 'P1');
+    await p.goto(`${BASE}/?q=${encodeURIComponent('<script>alert(1)</script>')}`);
+    record('Filters negative: a script-like search string is rendered as text and finds nothing', (await p.locator('.empty').isVisible()) && (await p.locator('#q').inputValue()) === '<script>alert(1)</script>', '', 'P0');
+    await p.goto(`${BASE}/?q=${'a'.repeat(300)}`);
+    record('Filters edge: a 300-character query is truncated safely', (await p.locator('#q').inputValue()).length === 100, '', 'P2');
+    await p.goto(`${BASE}/?q=depok&role=broker&sort=price_asc`);
+    await p.fill('#q', 'sleman');
+    await p.click('.search button');
+    await p.waitForURL(/q=sleman/);
+    record('Filters: a new search keeps the active filters and sort', /role=broker/.test(p.url()) && /sort=price_asc/.test(p.url()), p.url(), 'P1');
+    record('Filters negative: locked listings never appear through role/price/sort/search for anonymous visitors', await (async () => {
+      let ok = true;
+      for (const qs of ['role=broker&sort=price_asc', 'price=lt1', 'q=cempaka', 'q=mawar', 'avail=1&sort=recent', 'fac=parkir']) {
+        await p.goto(`${BASE}/?${qs}`);
+        const html = await p.content();
+        ok &&= !html.includes('Cempaka') && !html.includes('Mawar') && !(await idsOnPage(p)).some((i) => i === 'lst-9' || i === 'lst-10');
+      }
+      return ok;
+    })(), '', 'P0');
+    const fv = await axeViolations(p);
+    record('axe WCAG A/AA: homepage with filters active', fv.length === 0, fv.join(', '), 'P2');
+    await p.context().close();
+    // signed in: all five
+    const u = await newPage();
+    await signIn(u);
+    await u.goto(`${BASE}/?sort=price_asc`);
+    record('Sort (signed in): all five listings by price ascending', (await idsOnPage(u)).join() === 'lst-9,lst-3,lst-1,lst-2,lst-10', '', 'P1');
+    await u.goto(`${BASE}/?avail=1&sort=recent`);
+    record('Filters (signed in): availability + recency over all five', (await idsOnPage(u)).join() === 'lst-9,lst-1,lst-3', (await idsOnPage(u)).join(), 'P1');
+    await u.goto(`${BASE}/?role=broker&fac=parkir`);
+    record('Filters (signed in): broker + parking reaches the previously locked listing', (await idsOnPage(u)).join() === 'lst-2,lst-10', '', 'P1');
+    await u.goto(`${BASE}/listing/lst-10`);
+    record('Detail (signed in): "Tidak tersedia" and undisclosed broker fee are shown plainly', /Tidak tersedia/.test(await u.getByTestId('status-panel').innerText()) && /belum dicantumkan/.test(await u.getByTestId('fee-note').innerText()), '', 'P1');
+    await u.context().close();
+  }
+
+  // --- 3: optional, one-shot geolocation; manual area search always works
+  {
+    const mk = async (opts) => {
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, ...opts });
+      await ctx.addCookies([CONSENT]);
+      await ctx.addInitScript(() => {
+        window.__geo = { once: 0, watch: 0 };
+        const g = navigator.geolocation;
+        if (g) {
+          const gcp = g.getCurrentPosition.bind(g);
+          g.getCurrentPosition = (...a) => { window.__geo.once++; return gcp(...a); };
+          g.watchPosition = () => { window.__geo.watch++; throw new Error('watchPosition must not be used'); };
+        }
+      });
+      return ctx;
+    };
+    const ctx = await mk({ geolocation: { latitude: -7.7956, longitude: 110.3695 }, permissions: ['geolocation'] });
+    const p = await ctx.newPage();
+    const sent = [];
+    p.on('request', (r) => sent.push(r.url() + (r.postData() ?? '')));
+    await p.goto(BASE);
+    record('Location: nothing asks for location on load', (await p.evaluate(() => window.__geo.once)) === 0 && (await idsOnPage(p)).length === 3, '', 'P1');
+    await p.getByRole('button', { name: 'Urutkan dari lokasi saya' }).click();
+    await p.getByRole('button', { name: 'Hapus urutan terdekat' }).waitFor();
+    const labels = await p.getByTestId('distance').allInnerTexts();
+    const kms = labels.map((t) => Number(t.match(/([\d,]+) km/)[1].replace(',', '.')));
+    const order = await idsOnPage(p);
+    record('Location: one tap sorts the allowed listings nearest-first and labels each distance as approximate', labels.length === 3 && kms.every((k, i) => i === 0 || k >= kms[i - 1]) && /terdekat \(perkiraan\)/.test(await p.locator('.nearby__status').innerText()), `${order.join()} ${kms.join(',')}`, 'P1');
+    record('Location: exactly one getCurrentPosition call, never watchPosition', (await p.evaluate(() => window.__geo.once)) === 1 && (await p.evaluate(() => window.__geo.watch)) === 0, '', 'P1');
+    record('Location: the coordinates are never sent anywhere (no request carries them)', !sent.some((s) => /-7\.79|110\.36/.test(s)), '', 'P0');
+    await p.getByRole('button', { name: 'Hapus urutan terdekat' }).click();
+    record('Location: clearing restores the default order and removes distances', (await idsOnPage(p)).join() === 'lst-1,lst-2,lst-3' && (await p.getByTestId('distance').count()) === 0, '', 'P2');
+    await ctx.close();
+
+    const deniedCtx = await mk({});
+    const d = await deniedCtx.newPage();
+    await d.goto(BASE);
+    await d.getByRole('button', { name: 'Urutkan dari lokasi saya' }).click();
+    await d.waitForFunction(() => /ditolak/.test(document.querySelector('.nearby__status')?.textContent ?? ''));
+    await d.fill('#q', 'depok');
+    await d.click('.search button');
+    await d.waitForURL(/q=depok/);
+    record('Location denied: a clear message, and browsing plus manual area search still work', (await idsOnPage(d)).join() === 'lst-2', '', 'P0');
+    await deniedCtx.close();
+
+    const noGeoCtx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await noGeoCtx.addCookies([CONSENT]);
+    await noGeoCtx.addInitScript(() => { Object.defineProperty(navigator, 'geolocation', { value: undefined, configurable: true }); });
+    const n = await noGeoCtx.newPage();
+    await n.goto(BASE);
+    await n.getByRole('button', { name: 'Urutkan dari lokasi saya' }).click();
+    record('Location unsupported: a clear message and the list is unaffected', /tidak mendukung lokasi/.test(await n.locator('.nearby__status').innerText()) && (await idsOnPage(n)).length === 3, '', 'P1');
+    await noGeoCtx.close();
+  }
+
+  // --- 9: concise consent modal v2, consent versioning, funnel events
+  {
+    const m = await newPage({ consent: false, track: false });
+    await m.goto(BASE);
+    const items = (await m.locator('.modal__list li').allInnerTexts()).map((t) => t.trim());
+    record('Modal v2: exactly the three approved safety actions', JSON.stringify(items) === JSON.stringify(['Survei langsung ke lokasi.', 'Jangan transfer sebelum melihat langsung.', 'Hubungi hanya lewat kontak yang tertera di Ngekost Jogja.']), items.join(' | '), 'P1');
+    const visibleWords = await m.evaluate(() => { const c = document.querySelector('.modal').cloneNode(true); c.querySelectorAll('details').forEach((d) => d.querySelectorAll(':scope > :not(summary)').forEach((n) => n.remove())); return c.textContent.trim().split(/\s+/).length; });
+    record('Modal v2 is concise: at most 55 visible words before the guide is expanded', visibleWords <= 55, `${visibleWords} words`, 'P2');
+    record('Modal v2: the checkbox label is explicit and unchecked', (await m.getByLabel('Saya paham dan akan verifikasi langsung sebelum membayar.').isChecked()) === false, '', 'P1');
+    await m.context().close();
+    const stale = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await stale.addCookies([{ name: CONSENT.name, value: '2026-10-v1', url: BASE }]);
+    const sp = await stale.newPage();
+    await sp.goto(BASE);
+    record('Consent versioning: a consent given to the old wording (v1) does not bypass the new modal', await modalVisible(sp), '', 'P0');
+    await sp.goto(`${BASE}/listing/lst-1`);
+    record('Consent versioning: old consent does not unlock direct listing URLs either', (await modalVisible(sp)) && !(await sp.content()).includes('Timoho'), '', 'P0');
+    await stale.close();
+    const forged = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await forged.addCookies([{ name: CONSENT.name, value: 'yes', url: BASE }]);
+    const fp = await forged.newPage();
+    await fp.goto(BASE);
+    record('Consent negative: a forged consent cookie value does not bypass the modal', await modalVisible(fp), '', 'P0');
+    await forged.close();
+
+    // client events (intercepted) — shown, abandoned, and Do-Not-Track
+    const ec = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const posted = [];
+    await ec.route('**/api/events', async (route) => { posted.push(route.request().postDataJSON()); await route.fulfill({ status: 204 }); });
+    const ep = await ec.newPage();
+    await ep.goto(BASE);
+    await ep.waitForFunction(() => document.querySelector('[role=dialog]'));
+    await ep.waitForTimeout(400);
+    record('Events: opening the modal records consent_shown with a coarse viewport bucket and nothing else', posted.some((e) => e.event === 'consent_shown' && e.viewport === 'sm' && Object.keys(e).length === 2), JSON.stringify(posted), 'P2');
+    await ec.close();
+    // abandonment is sent as a beacon while the page unloads, so it is verified on the server log rather than by interception
+    const abBefore = loggedEvents().length;
+    const abCtx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const abPage = await abCtx.newPage();
+    await abPage.goto(BASE);
+    await abPage.waitForFunction(() => document.querySelector('[role=dialog]'));
+    await abPage.waitForTimeout(400);
+    await abPage.goto('about:blank');
+    await abPage.waitForTimeout(800);
+    const abNames = loggedEvents().slice(abBefore).map((e) => e.name);
+    record('Events: leaving the modal without consenting records consent_abandoned (server log)', abNames.includes('consent_shown') && abNames.includes('consent_abandoned') && !abNames.includes('consent_accepted'), abNames.join(','), 'P2');
+    await abCtx.close();
+    const dnt = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const dntPosted = [];
+    await dnt.route('**/api/events', async (route) => { dntPosted.push(route.request().postDataJSON()); await route.fulfill({ status: 204 }); });
+    await dnt.addInitScript(() => Object.defineProperty(navigator, 'doNotTrack', { get: () => '1' }));
+    const dp = await dnt.newPage();
+    await dp.goto(BASE);
+    await dp.waitForTimeout(400);
+    await dp.goto('about:blank');
+    await dp.waitForTimeout(300);
+    record('Events negative: with Do Not Track on, no event is sent', dntPosted.length === 0, JSON.stringify(dntPosted), 'P1');
+    await dnt.close();
+
+    // server-side events: accepted, gate_shown, signup_started, signup_completed
+    const before = loggedEvents().length;
+    const fc = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const fpg = await fc.newPage();
+    await fpg.goto(BASE);
+    await fpg.getByRole('checkbox').check();
+    await fpg.getByRole('button', { name: 'Saya paham, lanjut melihat listing' }).click();
+    await fpg.getByTestId('listing-gate').waitFor();
+    await fpg.waitForTimeout(600);
+    await fpg.goto(`${BASE}/masuk`);
+    await fpg.waitForTimeout(400);
+    await fpg.getByRole('button', { name: 'Masuk / Daftar (demo)' }).click();
+    await fpg.waitForFunction(() => document.querySelectorAll('.cards > li').length === 5);
+    await fpg.waitForTimeout(300);
+    const mine = loggedEvents().slice(before);
+    const names = mine.map((e) => e.name);
+    record('Events: the full funnel is logged server-side in order (shown, accepted, gate_shown, signup_started, signup_completed)', ['consent_shown', 'consent_accepted', 'gate_shown', 'signup_started', 'signup_completed'].every((n) => names.includes(n)) && names.indexOf('consent_accepted') > names.indexOf('consent_shown') && names.indexOf('signup_completed') > names.indexOf('signup_started'), names.join(','), 'P2');
+    record('Events: consent events carry only a viewport bucket; no ids, cookies, or listing data are logged', mine.every((e) => Object.keys(e).every((k) => ['type', 'name', 'viewport', 'at'].includes(k))) && mine.find((e) => e.name === 'consent_accepted')?.viewport === 'sm', JSON.stringify(mine[0]), 'P1');
+    await fc.close();
+    const api = (init, body) => fetch(`${BASE}/api/events`, { method: 'POST', ...init, body });
+    record('Events API negative: unknown event 400, malformed JSON 400, oversized body 413, GET 405', (await api({}, JSON.stringify({ event: 'page_view' }))).status === 400 && (await api({}, '{nope')).status === 400 && (await api({}, JSON.stringify({ event: 'consent_shown', pad: 'x'.repeat(300) }))).status === 413 && (await fetch(`${BASE}/api/events`)).status === 405 && (await api({}, JSON.stringify({ event: 'gate_shown' }))).status === 204, '', 'P1');
+  }
+
   // ===== Card layout regression: stress content at every required viewport =====
   for (const [w, h] of [[320, 640], [390, 844], [768, 1024], [1024, 768], [1440, 900]]) {
     const p = await newPage({ width: w, height: h });
     await p.goto(`${BASE}/qa/cards`);
     const stress = await cardIntegrity(p);
-    record(`Card layout: no clipping or overflow at ${w}px (7 stress cards: long title, unbroken word, long address, no facilities, 1 facility, yearly Rp 1.25 miliar, monthly)`, (await p.locator('.card').count()) === 7 && stress.length === 0, stress.slice(0, 4).join('; '), 'P1');
+    record(`Card layout: no clipping or overflow at ${w}px (10 stress cards: long title/word/address, no facilities, no evidence, unknown/unavailable, broker fee, yearly Rp 1.25 miliar)`, (await p.locator('.card').count()) === 10 && stress.length === 0, stress.slice(0, 4).join('; '), 'P1');
     await p.goto(BASE);
     const real = await cardIntegrity(p);
     record(`Card layout: homepage cards have no clipping or overflow at ${w}px`, real.length === 0, real.slice(0, 4).join('; '), 'P1');
@@ -404,12 +815,12 @@ try {
   }
   recordBlocked('Cross-browser (Firefox, WebKit) smoke', 'Only Chromium is installed in this environment and the environment forbids installing other browsers; run on Firefox/WebKit locally or in CI.', 'P2');
   recordBlocked('Screen-reader test (VoiceOver/NVDA/TalkBack)', 'No screen reader is available in this environment. Only the accessibility-tree smoke above was run.', 'P2');
-  recordBlocked('Independent QA run separate from the implementer', 'Pending: this report is generated by the implementing agent and does not count as independent evidence.', 'P1');
+  recordBlocked('Independent QA run separate from the implementer', 'Pending for the Trust and Discovery iteration: this report is generated by the implementing agent. The earlier independent QA covered PR #2 only, not these changes.', 'P1');
 
   // ===== Responsive overflow (consented) =====
   for (const [w, h] of [[320, 640], [390, 844], [768, 1024], [1024, 768], [1440, 900], [1920, 1080]]) {
     const p = await newPage({ width: w, height: h });
-    for (const path of ['/', '/listing/lst-1']) {
+    for (const path of ['/', '/listing/lst-1', '/listing/lst-2', '/listing/lst-2/laporkan', '/?price=1to2&fac=wifi&sort=price_asc', '/qa/detail']) {
       await p.goto(BASE + path);
       record(`No horizontal overflow ${w}px ${path}`, !(await overflow(p)));
     }
@@ -431,7 +842,7 @@ const failed = results.filter((r) => r.status === 'FAIL');
 const blocked = results.filter((r) => r.status === 'BLOCKED');
 const passed = results.filter((r) => r.status === 'PASS');
 const bySev = (sev) => results.filter((r) => r.severity === sev && r.status !== 'PASS').length;
-const md = `# Design QA — Option 3 (iteration 2 + visual fixes)
+const md = `# Design QA — Option 3, iteration 2, and Trust and Discovery
 
 Generated by \`npm run qa:e2e\` (tests/e2e/run.mjs) on ${new Date().toISOString()}.
 Run by the implementing agent. **This is not independent QA**; the independent run is listed below as BLOCKED until it happens.

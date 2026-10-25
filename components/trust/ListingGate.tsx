@@ -1,10 +1,12 @@
 import Link from 'next/link';
 import { Lock } from 'lucide-react';
+import { TrackMount } from '@/components/trust/TrackMount';
 
 /** Locked teaser for listings withheld from anonymous visitors. It receives only a count, never listing data. */
 export function ListingGate({ lockedCount }: { lockedCount: number }) {
   return (
     <section className="gate" data-testid="listing-gate" aria-labelledby="gate-title">
+      <TrackMount event="gate_shown" />
       <ul className="gate__rows" aria-hidden="true">
         {Array.from({ length: lockedCount }, (_, i) => (
           <li key={i} className="gate__row" data-testid="locked-teaser">

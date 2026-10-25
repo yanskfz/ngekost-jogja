@@ -38,3 +38,18 @@ so the contract is complete, but no adapter method mutates them yet except moder
 The SQLite adapter checks access in application code; it does not model database-level row security. The hosted
 database must enforce the same rules with row-level policies (see `PUBLIC_LAUNCH_DATABASE.md`). Node's `node:sqlite`
 is experimental, prints a warning when first loaded, and requires Node.js >= 22.13.0 (declared in `package.json` `engines`).
+
+## Trust and discovery additions
+
+| Field | Visibility | Notes |
+| --- | --- | --- |
+| `neighborhood_label` | public | Neighborhood-level text shown on cards and detail. |
+| `address` | private | Exact address. Never in `PublicListing`, cards, or detail. |
+| `map_latitude`, `map_longitude` | private | Exact point. Public output carries `approx_latitude`, `approx_longitude`, and `approx_precision_m` (500). |
+| `availability` | public | `available`, `limited`, `unavailable`, `unknown`. `unknown` must not be worded as available. |
+| `contact_reachability_status` | public (as an evidence check only) | `reachable`, `unverified`, `failed`. Never presented as a safety guarantee. |
+| `broker_fee_status`, `broker_fee_amount` | public | `none`, `disclosed` (needs an amount), `undisclosed`. Meaningful for agen listings only. |
+
+Approximate location: `approximateLocation()` (server only) offsets the exact point by 312–488 m in a direction derived from `HMAC(LOCATION_JITTER_SECRET, listing id)`. Without a secret it uses a development constant, which is acceptable only for dummy data: with a known constant the offset could be recomputed and removed.
+
+Reports gain an optional `reporter_key` (an anonymous per-reporter value) in the dev schema to make intake idempotent; the dev adapter hides an approved listing as soon as a report is created.

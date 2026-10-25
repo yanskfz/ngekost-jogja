@@ -19,8 +19,12 @@ Sources:
 | `public/images/trust-photo.webp` | `exec-7a0e29e2-9727-45d9-ad17-9d62027cd564.png` | (64, 734, 148, 818) | 84x84 | 794 | Trust checklist: minimum 3 photos |
 | `public/images/trust-whatsapp.webp` | `exec-7a0e29e2-9727-45d9-ad17-9d62027cd564.png` | (301, 734, 385, 818) | 84x84 | 1066 | Trust checklist: WhatsApp reachable |
 | `public/images/trust-shield.webp` | `exec-7a0e29e2-9727-45d9-ad17-9d62027cd564.png` | (573, 734, 657, 818) | 84x84 | 756 | Trust checklist: admin reviewed |
-| `public/images/photo-kost.webp` | `exec-7a0e29e2-9727-45d9-ad17-9d62027cd564.png` | (40, 964, 348, 1180) | 308x216 | 10000 | Kost listing photo |
-| `public/images/photo-kontrakan.webp` | `exec-7a0e29e2-9727-45d9-ad17-9d62027cd564.png` | (40, 1199, 348, 1424) | 308x225 | 16824 | Kontrakan listing photo |
+| `public/images/photo-kost.webp` | `exec-7a0e29e2-9727-45d9-ad17-9d62027cd564.png` | (40, 964, 285, 1180) | 245x216 | 7486 | Kost listing photo (slot 1), cropped to exclude the mockup heart overlay |
+| `public/images/photo-kontrakan.webp` | `exec-7a0e29e2-9727-45d9-ad17-9d62027cd564.png` | (40, 1199, 285, 1424) | 245x225 | 13596 | Kontrakan listing photo (slot 1), cropped to exclude the mockup heart overlay |
+| `public/images/photo-kost-2.webp` | `exec-7a0e29e2-9727-45d9-ad17-9d62027cd564.png` | (40, 1022, 348, 1180) | 308x158 | 8158 | Kost listing photo, slot 2 (lower band of the reference photo, below the heart overlay) |
+| `public/images/photo-kost-3.webp` | `exec-7a0e29e2-9727-45d9-ad17-9d62027cd564.png` | (180, 1022, 348, 1180) | 168x158 | 4190 | Kost listing photo, slot 3 (lower-right crop of the reference photo, below the heart overlay) |
+| `public/images/photo-kontrakan-2.webp` | `exec-7a0e29e2-9727-45d9-ad17-9d62027cd564.png` | (40, 1258, 348, 1424) | 308x166 | 12470 | Kontrakan listing photo, slot 2 (lower band of the reference photo, below the heart overlay) |
+| `public/images/photo-kontrakan-3.webp` | `exec-7a0e29e2-9727-45d9-ad17-9d62027cd564.png` | (180, 1258, 348, 1424) | 168x166 | 6072 | Kontrakan listing photo, slot 3 (lower-right crop of the reference photo, below the heart overlay) |
 | `public/images/warning-girl.webp` | `docs/design/codex-clipboard-e931d75f-e684-4cc4-916b-cc5572b2c4e5.png` | (941, 112, 1272, 482) | 331x370 | 9146 | Anti-scam modal and warning card illustration |
 | `public/images/footer-art.webp` | `exec-7a0e29e2-9727-45d9-ad17-9d62027cd564.png` | (372, 1648, 853, 1844) | 481x196 | 16418 | Footer scene |
 
