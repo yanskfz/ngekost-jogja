@@ -30,7 +30,6 @@ Use the smallest suitable Agent OS owner:
 
 Keep implementation and git content in English. User-facing discussion may be Indonesian.
 
-
 ## Karpathy guidelines (mandatory)
 
 The project also uses the `andrej-karpathy-skills` plugin from `multica-ai/andrej-karpathy-skills`.

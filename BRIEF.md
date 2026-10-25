@@ -10,7 +10,7 @@
 - Task 1 follow-up: `npm audit` reported 2 findings (high/moderate) from `postcss` 8.4.31 bundled by `next@15.5.28` (latest 15.x). Fixed with an `overrides` entry (`postcss ^8.5.31`) instead of the breaking `next@16` upgrade; `npm audit` now reports 0 vulnerabilities and typecheck, tests, and build pass. Remove the override when a Next 15 release ships a patched postcss. Verification was run by the implementing agent, not an independent QA run.
 - Task 2 result: data contracts (`lib/data/types.ts`), rules for visibility/expiry/transitions (`lib/data/rules.ts`), dummy fixtures (`data/dummy-listings.ts`), read-only preview source (`lib/data/preview.ts`) rendered by `app/page.tsx`, and a dev/test-only SQLite adapter (`lib/data/dev-database.ts`, `node:sqlite`). No Supabase credentials needed; no write path in the preview. See `docs/DATA_MODEL.md`. Checks were run by the implementing agent, not independent QA.
 - Review fix (P1): declared Node.js `>=22.13.0` (`engines`, `.nvmrc`, `.npmrc` `engine-strict`) because `node:sqlite` is unavailable unflagged on older Node; documented in README and docs. Re-run by the implementing agent: typecheck, tests, build, audit.
-- Design handoff: `docs/DESIGN_OPTION_3_HANDOFF.md` and the committed Option 3 visual reference are the source of truth for the next Claude Code iteration. UI implementation and E2E QA are still pending.
+- Design handoff: `docs/DESIGN_OPTION_3_HANDOFF.md` (iteration 2 hard requirements, responsive visual acceptance, QA workflow) and the Option 3 reference are the source of truth. PR #2 implements Option 3, the blocking consent modal, the server-side 3-of-5 anonymous gate with demo unlock, and the sliced-asset pipeline (no generated images). Visual fixes after the QA review: listing cards no longer clip or split prices at 320–1440 px, and category/trust/warning/modal assets are visually separated from their parent surfaces. `design-qa.md` lists 133 PASS, 0 FAIL, 3 BLOCKED (cross-browser, screen reader, independent QA) with severities and 11 screenshots in `docs/qa-screenshots/`; the implementing-agent run was independently repeated in a clean worktree: build, typecheck, 28/28 unit tests, audit 0 vulnerabilities, and E2E exit 0 with 133 PASS/0 FAIL/3 BLOCKED, repeated twice. The remaining blocks are Firefox/WebKit and screen-reader environment limits; visual fidelity approval remains with the product owner. Lighthouse mobile 91 (consented). Demo sign-in is not real authentication. Not merged and not deployed by Claude Code; product-owner visual approval comes next.
 - Date: 2026-10-25.
 
 ## Open questions
@@ -26,7 +26,7 @@
 
 ## Next step
 
-Independent review and QA of Tasks 1–2 (evidence so far is from the implementing agent), then merge PR #1. Task 3 (auth and submitter workspace) needs a hosted auth provider decision; do not start it before that. Hosted database setup stays a public-launch prerequisite (`docs/PUBLIC_LAUNCH_DATABASE.md`).
+Complete the independent visual/code review and QA gate for PR #2, fix any P1/P2 findings, obtain product-owner visual approval, then resolve merge status and merge. Task 3 (auth and submitter workspace) needs a hosted auth provider decision; do not start it before that. Hosted database setup stays a public-launch prerequisite (`docs/PUBLIC_LAUNCH_DATABASE.md`).
 
 ## Decisions
 
@@ -167,6 +167,27 @@ The product must:
 - status: open | investigating | resolved | dismissed
 - created_at
 - resolved_at
+
+## QA requirements for the current design iteration
+
+- Requirements preflight must happen before E2E: read this brief and `docs/DESIGN_OPTION_3_HANDOFF.md`, state assumptions, and freeze acceptance criteria.
+- QA must apply Karpathy guidelines and Ponytail review principles; the implementer report alone is not independent QA evidence.
+- E2E must cover happy path, edge cases, and negative/security cases, including consent bypass attempts, the 3-of-5 listing gate, direct URLs, query/client-state bypasses, locked-data leakage, non-public listings, search/filter empty states, long content, missing optional data, JS-disabled behavior, and required responsive viewports.
+- Visual QA must capture the modal, consented homepage, category/trust assets, listing section, detail, locked gate, and demo-unlocked state. DOM overflow checks alone do not establish visual pass.
+- Asset acceptance: no unintended color collision, overlap, clipping, or unclear boundary between a sliced asset and its parent surface. Listing cards must not clip price, metadata, CTA, or image at mobile width.
+- Every scenario is recorded as PASS, FAIL, or BLOCKED with evidence and severity/priority. P0 means security/data exposure or app unavailable; P1 means core journey broken or content clipped; P2 means meaningful visual/accessibility/coverage issue; P3 is polish.
+
+
+
+### Living regression requirement
+
+Testcases must improve continuously during implementation and QA:
+
+- Every discovered bug becomes a deterministic regression test before the fix is accepted.
+- The test must fail before the fix and pass after it.
+- Keep prior coverage; do not delete a test unless the requirement is removed or replaced and the reason is documented.
+- Update `design-qa.md` with the reproduction, testcase, result, severity/priority, and residual risk.
+- Re-run targeted regression tests after each fix, followed by the full E2E suite.
 
 ## Done when
 

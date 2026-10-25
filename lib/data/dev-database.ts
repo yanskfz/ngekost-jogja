@@ -54,8 +54,8 @@ export class DevDatabase {
     }
     for (const l of data.listings) {
       run(
-        'INSERT INTO listings VALUES (' + Array(24).fill('?').join(',') + ')',
-        l.id, l.title, l.type, l.area, l.address, l.map_latitude, l.map_longitude, l.price_monthly, l.deposit_information,
+        'INSERT INTO listings VALUES (' + Array(25).fill('?').join(',') + ')',
+        l.id, l.title, l.type, l.area, l.address, l.map_latitude, l.map_longitude, l.price_monthly, l.price_period, l.deposit_information,
         JSON.stringify(l.facilities), l.condition_details, l.contact_name, l.contact_whatsapp, l.source_url, l.role, l.status,
         l.owner_id, l.source, l.permission_status, l.verification_status, l.last_confirmed_at, l.expires_at, l.created_at, l.updated_at,
       );
@@ -72,13 +72,13 @@ export class DevDatabase {
   /** Public read path: approved, non-expired listings only, without private columns. */
   listPublicListings(now: Date = new Date()): PublicListing[] {
     const rows = this.db
-      .prepare("SELECT * FROM listings WHERE status = 'approved' AND expires_at IS NOT NULL AND expires_at > ? ORDER BY created_at, id")
+      .prepare("SELECT * FROM listings WHERE status = 'approved' AND expires_at IS NOT NULL AND expires_at > ? ORDER BY rowid")
       .all(now.toISOString());
     return rows.map(toListing).filter((l) => isPubliclyVisible(l, now)).map(toPublicListing);
   }
 
   listSubmitterListings(accountId: string): Listing[] {
-    return this.db.prepare('SELECT * FROM listings WHERE owner_id = ? ORDER BY created_at, id').all(accountId).map(toListing);
+    return this.db.prepare('SELECT * FROM listings WHERE owner_id = ? ORDER BY rowid').all(accountId).map(toListing);
   }
 
   /** Returns undefined when the listing does not exist or belongs to someone else (no existence leak). */

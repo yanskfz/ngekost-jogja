@@ -125,8 +125,41 @@ These requirements are mandatory for the next implementation and override any ea
 - Do not create substitute illustrations, new characters, new backgrounds, generic stock images, or screenshot-as-UI.
 - Keep an asset manifest mapping each output asset to its source image and crop/transform. Add or update docs/DESIGN_ASSET_MANIFEST.md.
 - Every shipped image must have fixed dimensions/aspect-ratio behavior, an appropriate alt, and lazy loading when below the fold.
+- Asset backgrounds must remain visually distinct from their parent surface. No icon tile, crop, mask, or color-correction may blend into a card so strongly that the asset boundary or meaning becomes unclear.
+- Category and trust assets require a visible separation from their card background, with no unintended overlap, clipping, or color collision at the primary 390x844 viewport.
 
-### New acceptance tests
+### Responsive visual acceptance
+
+- At 320x640, 390x844, 768x1024, 1024x768, and 1440x900, no text, price, facility, CTA, card edge, or icon may be clipped horizontally.
+- Listing cards must keep photo, metadata, price, and navigation affordance inside the viewport; no content may rely on horizontal scrolling.
+- Long titles, long addresses, missing optional facilities, and both monthly/yearly price periods must render without breaking the card layout.
+- The category cards and trust checklist must retain readable text and clear asset separation at each required viewport.
+- A screenshot audit must inspect the initial viewport and the listing section at 390x844. A passing DOM/overflow check alone is insufficient for visual acceptance.
+
+### Required QA workflow and evidence
+
+Before declaring E2E green:
+
+1. Requirements preflight: read `BRIEF.md` and this handoff; list assumptions, acceptance criteria, and known risks.
+2. Karpathy check: prefer the smallest testable change, state ambiguity, and define a verifiable result.
+3. Ponytail review: trace the changed flow, callers, security boundaries, and missing tests; do not review only the diff.
+4. Product Design Audit: capture and inspect screenshots for the modal, consented homepage, listing section, detail page, locked gate, and demo-unlocked state.
+5. Execute E2E in three categories:
+   - Happy path: consent, browse, search, filters, open detail, see contact warning, demo unlock.
+   - Edge cases: 0 results, last/first listing, mixed filters, long title/address, missing optional data, refresh, direct URLs, 320/390/768/1024/1440 viewports, JS disabled.
+   - Negative/security: unchecked consent submission, Escape/backdrop/refresh/direct-URL bypass, query/client-state bypass, locked data absent from HTML, non-public listings blocked, no WhatsApp before approval/consent, no payment or transfer collection, no PII leakage.
+6. Record every scenario as PASS, FAIL, or BLOCKED with evidence and a severity/priority.
+7. Run the independent QA pass separately from implementation; an implementer-generated report is not independent evidence.
+8. Re-run the targeted regression tests after each fix and update `design-qa.md`.
+
+### Severity and priority
+
+- P0 / Blocker: security or data-exposure failure, consent bypass, payment/transfer risk, or the app cannot load.
+- P1 / High: core mobile journey broken, listing/content clipped, locked listing exposed, or contact safety warning missing.
+- P2 / Medium: visual hierarchy/contrast issue, accessibility issue with a viable workaround, or an important edge case not covered.
+- P3 / Low: polish, copy, minor fidelity, or non-critical cross-browser difference.
+
+## New acceptance tests
 
 - First visit opens the blocking safety modal.
 - Modal cannot close before explicit checkbox consent.
@@ -135,4 +168,17 @@ These requirements are mandatory for the next implementation and override any ea
 - Anonymous state exposes exactly three complete listings and one locked gate for the remaining two.
 - Direct navigation to the fourth/fifth listing does not bypass the anonymous limit.
 - Authenticated/demo-unlocked state exposes all five listings.
+- Visual asset separation and no clipping are checked with screenshots at 390x844.
 - E2E verifies the above at 390x844 and records results in design-qa.md.
+
+
+### Living regression suite
+
+- The testcase suite is a living product artifact, not a one-time checklist.
+- Every discovered bug must produce a deterministic regression test before the fix is accepted.
+- The regression test must fail against the buggy behavior, pass after the fix, and remain in the suite.
+- Every fix must update the relevant happy-path, edge-case, or negative/security scenario when the behavior affects that category.
+- QA must preserve prior coverage; a test may be removed only when the requirement is explicitly removed or replaced, with the reason recorded in `design-qa.md`.
+- `design-qa.md` must include the bug reproduction, test name or scenario, fix result, and residual risk.
+- Re-run targeted regression tests after each fix, then run the full E2E suite before declaring green.
+- A previously passing test does not close a new visual or security bug unless the new failure mode is explicitly covered.

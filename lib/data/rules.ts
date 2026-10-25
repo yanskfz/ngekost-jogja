@@ -34,6 +34,7 @@ export function toPublicListing(listing: Listing): PublicListing {
     map_latitude: listing.map_latitude,
     map_longitude: listing.map_longitude,
     price_monthly: listing.price_monthly,
+    price_period: listing.price_period,
     deposit_information: listing.deposit_information,
     facilities: listing.facilities,
     condition_details: listing.condition_details,

@@ -38,9 +38,9 @@ describe('expiry rules', () => {
 });
 
 describe('public reads', () => {
-  it('preview and SQLite return only approved, non-expired listings and no private fields', () => {
+  it('preview and SQLite return only approved, non-expired listings (5) and no private fields', () => {
     const db = freshDb();
-    const expected = ['lst-1', 'lst-2', 'lst-3'];
+    const expected = ['lst-1', 'lst-2', 'lst-3', 'lst-9', 'lst-10'];
     const fromDb = db.listPublicListings(NOW);
     expect(fromDb.map((l) => l.id)).toEqual(expected);
     expect(listPreviewListings(NOW).map((l) => l.id)).toEqual(expected);
