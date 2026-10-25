@@ -36,15 +36,17 @@ export function ListingCard({ listing, priority = false }: { listing: ListingCar
               {listing.title}
             </Link>
           </h3>
-          <ul className="facilities" aria-label="Fasilitas">
-            {listing.facilities.slice(0, 3).map((f) => (
-              <li key={f}>
-                <FacilityIcon name={f} /> {f}
-              </li>
-            ))}
-          </ul>
+          {listing.facilities.length > 0 ? (
+            <ul className="facilities" aria-label="Fasilitas">
+              {listing.facilities.slice(0, 3).map((f) => (
+                <li key={f}>
+                  <FacilityIcon name={f} /> {f}
+                </li>
+              ))}
+            </ul>
+          ) : null}
           <p className="card__price">
-            {rupiah.format(listing.price_monthly)} <span>/ {listing.price_period}</span>
+            <span className="card__amount">{rupiah.format(listing.price_monthly)}</span> <span className="card__period">/ {listing.price_period}</span>
           </p>
           <p className="card__address">
             <MapPin size={14} aria-hidden="true" /> {listing.address}

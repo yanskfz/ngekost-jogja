@@ -2,8 +2,30 @@
 ## Commands run
 `npm run typecheck`, `npm test` (28 unit tests), `npm run build`, `npm run qa:e2e`, `npm audit` (0 vulnerabilities).
 
+## Requirements preflight (frozen before the visual-fix run)
+Read: `BRIEF.md` and `docs/DESIGN_OPTION_3_HANDOFF.md` (iteration 2 hard requirements, responsive visual acceptance, QA workflow).
+Assumptions: the reference images are the visual source of truth; no new imagery may be generated (crop/resize/compress only); palette, hierarchy, and homepage sections must not change without product-owner approval; demo sign-in and dummy data are preview behavior only.
+Scope of this fix (smallest testable change): (1) listing cards must not clip or overflow at 320/390/768/1024/1440 px; (2) category/trust (and warning/modal) assets need visible separation from their parent surface; (3) add regression E2E for long title/address, empty facilities, monthly/yearly price, mobile screenshots, and asset boundary; (4) record PASS/FAIL/BLOCKED with severity.
+Known risks: cropped assets are limited to mockup resolution; only Chromium is available; no screen reader.
+Verifiable result: every row below is PASS, or is listed BLOCKED with the reason.
+
+## Ponytail-style trace of the changed flow
+Callers of the changed code: `ListingCard` (home, QA fixture page), `app/globals.css` card/asset rules, the detail page price markup (`card__amount`/`card__period`). Security boundaries are unchanged by this fix: consent gating and the 3-of-5 gate were not touched, and their E2E rows still pass. New surface: `/qa/cards`, which renders synthetic data and returns 404 unless `QA_FIXTURES=1`; the E2E starts a second server without the variable and asserts the 404.
+
+## Findings from review and how this run addresses them
+| Priority | Finding | Resolution in this run |
+| --- | --- | --- |
+| P1 | Possible text/card clipping on mobile | Not reproducible on real data at 390 px. Stress cards reproduced real defects: at 320 px a Rp 1.250.000.000 price was split mid-number ("Rp 1.250.000.0 / 00") and overflowed its box (144 px in 140 px). Fixed: unbreakable amount, narrower photo column and smaller price at <= 359 px, `overflow-wrap` on titles/addresses/facilities. Geometry + screenshot checks now pass at all five viewports. |
+| P2 | Category asset blends into the parent card | Fixed without new imagery or palette change: removed `mix-blend-mode: multiply` on category, trust, warning and modal images; added a white tile ring plus a thin dark outline (category), a circular outline (trust), and rounded corners with a white ring (warning, modal). A pixel check measures colour distance across each edge. |
+| P1 | 95/95 E2E was run by the implementer | Still true for this report. Listed as BLOCKED until the independent run. |
+| P2 | No screen-reader or cross-browser test | BLOCKED (not available here). An accessibility-tree smoke and axe WCAG A/AA were added as partial coverage. |
+| P2 | No screenshot audit for modal, gate, detail, unlocked | 11 screenshots captured in `docs/qa-screenshots/` and reviewed by the implementer; independent review pending. |
+| P1 (public launch) | Demo sign-in is not real auth; data is dummy | Expected limitation, unchanged. |
+
+Visual audit notes (implementer review of the screenshots): text, prices, facilities, chevron, and photo stay inside every card at 320 and 390 px; long unbroken words wrap instead of clipping; yearly and monthly periods both render; an empty facilities list leaves no gap. Remaining visual judgement (fidelity to the reference, whether the tile outlines are acceptable) is the product owner's approval to give.
+
 ## Lighthouse (mobile, localhost production build, run once manually)
-- Consented homepage: Performance 91, Accessibility 100, Best Practices 96. LCP 2.6 s, CLS 0, TBT 280 ms, 200 KiB.
+- Consented homepage (re-run after the visual fixes): Performance 91, Accessibility 100, Best Practices 96. LCP 2.5 s, CLS 0, TBT 300 ms, 200 KiB.
 - First-visit consent modal: Performance 93, Accessibility 100, Best Practices 96. LCP 2.2 s, CLS 0, TBT 270 ms, 134 KiB.
 Both meet the >= 85 target locally. Single localhost runs with simulated throttling, not Vercel measurements.
 
@@ -25,6 +47,7 @@ Known differences from the reference image:
 - Fonts are a system stack, not the rounded display font in the mockup (handoff allows system or one external font).
 - Cropped artwork has its background baked in; it is blended with `mix-blend-mode: multiply` and a mask, so edges can differ slightly. Resolution is limited to the reference's native 853 px canvas (photos 308 px wide), so images are softer on high-DPR screens until final assets are supplied.
 - Handwritten footer quote uses a system cursive font and has no yellow underline stroke.
+- Category icons now sit in an outlined white tile and trust icons in an outlined circle (to meet the asset-separation rule); this changes how the sliced art meets its card but not the art, palette, or hierarchy. Needs product-owner visual approval.
 - Warning card keeps the reference copy plus one sentence required by BRIEF.md (no payments processed, no transaction guarantee).
 - Heart buttons are real toggles stored only in the visitor's own browser (localStorage); nothing is sent or shared.
 - Listings 3, 9, and 10, the locked gate, the sign-in page, the listing detail, and the filter chips are not in the reference and reuse its visual language and existing crops.

@@ -71,7 +71,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
           ))}
         </div>
         <p className="card__price">
-          {rupiah.format(listing.price_monthly)} <span>/ {listing.price_period}</span>
+          <span className="card__amount">{rupiah.format(listing.price_monthly)}</span> <span className="card__period">/ {listing.price_period}</span>
         </p>
         {listing.deposit_information ? <p>{listing.deposit_information}</p> : null}
         <h2>Fasilitas</h2>
