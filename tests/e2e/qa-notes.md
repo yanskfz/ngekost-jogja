@@ -70,3 +70,17 @@ Known differences from the reference image:
 - No Vercel preview was checked and nothing was deployed.
 - Cross-browser testing beyond Chromium was not done.
 - No screen reader testing; accessibility is covered by axe-core WCAG A/AA, keyboard focus and touch-target checks only.
+
+
+## Independent QA confirmation
+
+Executed separately by the product-owner QA session in a clean worktree, without modifying application code:
+
+- `npm ci` and `npm run build`: PASS; `/qa/cards` route registered.
+- `npm run typecheck`: PASS.
+- `npm test`: 28/28 PASS across 4 files.
+- `npm audit`: 0 vulnerabilities.
+- `npm run qa:e2e`: exit code 0, 133 PASS, 0 FAIL, 3 BLOCKED; repeated twice with identical results.
+- The 3 BLOCKED checks remain environment limitations: Firefox/WebKit, screen-reader testing, and product-owner visual approval.
+- Initial port availability check was not counted because `ss` was unavailable; E2E completed normally.
+- Independent QA did not assess or approve visual fidelity. Product-owner visual approval remains pending.
