@@ -34,4 +34,4 @@ so the contract is complete, but no adapter method mutates them yet except moder
 
 The SQLite adapter checks access in application code; it does not model database-level row security. The hosted
 database must enforce the same rules with row-level policies (see `PUBLIC_LAUNCH_DATABASE.md`). Node's `node:sqlite`
-is experimental and prints a warning when first loaded.
+is experimental, prints a warning when first loaded, and requires Node.js >= 22.13.0 (declared in `package.json` `engines`).

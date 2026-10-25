@@ -2,6 +2,10 @@
 
 Marketplace kost dan kontrakan untuk Sleman dan Kota Jogja. Next.js + TypeScript, siap untuk Vercel.
 
+## Requirements
+
+Node.js 22.13 or newer (see `.nvmrc`; `engines` in `package.json` and `engine-strict` enforce it). The local development database and tests use Node's built-in `node:sqlite`, which is not available unflagged on Node 20 or on 22 before 22.13.
+
 ## Run locally
 
 ```bash

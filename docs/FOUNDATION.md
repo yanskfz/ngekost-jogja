@@ -20,6 +20,11 @@ Supabase is the planned data/auth/storage layer; OpenStreetMap-compatible tiles 
 
 Application code must reach Supabase and the map provider only through `lib/supabase/*` and `lib/map/*`.
 
+## Runtime
+
+Node.js >= 22.13.0 (`engines`, `.nvmrc`, `.npmrc` with `engine-strict=true`). Required by `node:sqlite`, used by the dev/test
+adapter in `lib/data/dev-database.ts`. CI and Vercel must use Node 22 or newer.
+
 ## Commands
 
 ```bash
