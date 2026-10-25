@@ -18,12 +18,12 @@
 - [x] Expiry — hide automatically after 2 months; allow reconfirmation.
 - [x] Admin auth — start with one admin account using email plus WhatsApp reachability verification.
 - [x] WhatsApp verification scope — admin-supervised manual reachability check for MVP; automated OTP is deferred.
-- [ ] Supabase project URL and keys — not available; needed before Task 2 can be applied/verified against a real project.
+- [ ] Hosted production database/provider — must be selected and configured before public launch.
 - [ ] Map tile provider — the default public OSM tile server is development-only; choose a policy-compliant provider before production.
 
 ## Next step
 
-Independent QA of Task 1 (the evidence so far is from the implementing agent) and merge of the Task 1 PR, then hand off Task 2 (database schema and access rules). Task 2 needs a Supabase project; credentials are not yet available.
+Independent QA of Task 1 (the evidence so far is from the implementing agent) and merge of the Task 1 PR, then hand off Task 2 using dummy fixtures and local SQLite for development. Hosted database setup is a separate prerequisite before public launch.
 
 ## Decisions
 
@@ -39,6 +39,8 @@ Independent QA of Task 1 (the evidence so far is from the implementing agent) an
 - 2026-10-25 — Anti-scam safeguards are core: approval checks, prominent no-transfer warnings, report flow, immediate hide/review controls, and moderation audit events.
 - 2026-10-25 — Publication of third-party listing information requires permission; Facebook URLs are provenance/reference data, not permission to copy without consent.
 - 2026-10-25 — Requirements and acceptance criteria are locked before Claude Code implementation starts.
+- 2026-10-25 — Vercel preview uses non-sensitive dummy listings and read-only behavior until a hosted production database is configured.
+- 2026-10-25 — SQLite is for local development/tests only; a persistent hosted database is required before public submissions or public moderation.
 
 ## Requirements
 
@@ -87,6 +89,8 @@ The product must:
 - Vercel-compatible deployment.
 - Recommended production stack: Next.js + TypeScript, Supabase Postgres/Auth/Storage, and OpenStreetMap-compatible map rendering.
 - Production provider credentials/configuration must be documented without committing secrets.
+- Vercel preview may use non-sensitive dummy fixtures and must not imply that public submissions persist.
+- Public launch requires a hosted persistent database, auth, storage, migrations, backups, RLS/access rules, admin account, and secret environment variables.
 - Claude Code is the implementation owner after the plan is approved.
 - Each implementation task has explicit acceptance criteria and a narrow file scope.
 - Review, QA, and deployment verification are separate quality gates.
@@ -169,3 +173,4 @@ The product must:
 - [ ] Independent review passes.
 - [ ] QA records executed results.
 - [ ] Vercel deployment is verified read-only.
+- [ ] Public database setup checklist is complete before enabling submissions or moderation.
