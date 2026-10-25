@@ -7,13 +7,18 @@ const cards = listPreviewCards(NOW);
 
 describe('search and filters', () => {
   it('matches text across title and address, case-insensitively', () => {
-    expect(filterListings(cards, { q: 'MELATI' }).map((l) => l.id)).toEqual(['lst-1']);
-    expect(filterListings(cards, { q: 'kota jogja' }).map((l) => l.id)).toEqual(['lst-2', 'lst-3']);
+    expect(filterListings(cards, { q: 'TIMOHO' }).map((l) => l.id)).toEqual(['lst-1']);
+    expect(filterListings(cards, { q: 'kota jogja' }).map((l) => l.id)).toEqual(['lst-1', 'lst-3']);
     expect(filterListings(cards, { q: 'zzz' })).toEqual([]);
   });
 
   it('combines type and area filters', () => {
-    expect(filterListings(cards, { type: 'kost', area: 'kota_jogja' }).map((l) => l.id)).toEqual(['lst-3']);
+    expect(filterListings(cards, { type: 'kost', area: 'kota_jogja' }).map((l) => l.id)).toEqual(['lst-1', 'lst-3']);
+  });
+
+  it('keeps the price period with the price (kontrakan priced per tahun)', () => {
+    expect(cards.find((l) => l.id === 'lst-2')).toMatchObject({ price_monthly: 18000000, price_period: 'tahun' });
+    expect(cards.find((l) => l.id === 'lst-1')).toMatchObject({ price_period: 'bulan' });
   });
 
   it('ignores invalid parameters and round-trips a query string', () => {

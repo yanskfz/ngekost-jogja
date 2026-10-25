@@ -54,10 +54,10 @@ try {
   record('No horizontal overflow at 390x844', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
 
   // Search
-  await page.fill('#q', 'melati');
+  await page.fill('#q', 'timoho');
   await page.click('.search button');
-  await page.waitForURL(/q=melati/);
-  record('Search "melati" returns 1 result', (await count(page)) === 1);
+  await page.waitForURL(/q=timoho/);
+  record('Search "timoho" returns 1 result', (await count(page)) === 1);
   await page.goto(`${BASE}/?q=zzzz`);
   record('Empty state shown for no match', (await page.locator('.empty').isVisible()) && (await count(page)) === 0);
   await page.getByRole('link', { name: 'Hapus pencarian' }).click();
@@ -68,11 +68,13 @@ try {
   await page.getByRole('link', { name: 'Kontrakan', exact: true }).first().click();
   await page.waitForURL(/type=kontrakan/);
   record('Type filter "Kontrakan" returns 1 (expired one excluded)', (await count(page)) === 1);
-  await page.getByRole('link', { name: 'Sleman', exact: true }).click();
-  await page.waitForURL(/area=sleman/);
-  record('Combined Kontrakan + Sleman returns empty state', (await count(page)) === 0 && (await page.locator('.empty').isVisible()));
-  await page.goto(`${BASE}/?type=kost&area=sleman`);
-  record('Kost + Sleman returns 1', (await count(page)) === 1);
+  await page.getByRole('link', { name: 'Kota Jogja', exact: true }).click();
+  await page.waitForURL(/area=kota_jogja/);
+  record('Combined Kontrakan + Kota Jogja returns empty state (expired one excluded)', (await count(page)) === 0 && (await page.locator('.empty').isVisible()));
+  await page.goto(`${BASE}/?type=kontrakan&area=sleman`);
+  record('Kontrakan + Sleman returns 1', (await count(page)) === 1);
+  await page.goto(`${BASE}/?type=kost&area=kota_jogja`);
+  record('Kost + Kota Jogja returns 2', (await count(page)) === 2);
   await page.goto(`${BASE}/?type=kost`);
   await page.fill('#q', 'anggrek');
   await page.click('.search button');
@@ -85,14 +87,23 @@ try {
   await page.waitForURL(/type=kost/);
   record('"Cari Kost" category action filters to kost', (await count(page)) === 2);
   await page.goto(BASE);
+  const prices = await page.locator('.card__price').allInnerTexts();
+  record('Cards show reference prices and periods', prices[0].includes('1.300.000') && prices[0].includes('/ bulan') && prices[1].includes('18.000.000') && prices[1].includes('/ tahun'), prices.join(' | '));
+  const fav = page.getByRole('button', { name: 'Simpan Kost Puri Timoho' });
+  await fav.click();
+  record('Favorite heart toggles pressed state', (await fav.getAttribute('aria-pressed')) === 'true');
+  await page.reload();
+  record('Favorite persists in this browser only (localStorage)', (await page.getByRole('button', { name: 'Simpan Kost Puri Timoho' }).getAttribute('aria-pressed')) === 'true');
+  await page.getByRole('button', { name: 'Simpan Kost Puri Timoho' }).click();
+  await page.goto(BASE);
   await page.getByLabel('Menu', { exact: true }).click();
   record('Menu opens and shows navigation', await page.getByRole('navigation', { name: 'Menu utama' }).isVisible());
 
   // Detail
   await page.goto(BASE);
-  await page.getByRole('link', { name: 'Kost Putri Contoh Melati' }).click();
+  await page.getByRole('link', { name: 'Kost Puri Timoho' }).click();
   await page.waitForURL(/\/listing\/lst-1/);
-  record('Detail page shows title, price and 3 photos', (await page.locator('h1').innerText()).includes('Melati') && (await page.locator('.gallery img').count()) === 3);
+  record('Detail page shows title, price and 3 photos', (await page.locator('h1').innerText()).includes('Timoho') && (await page.locator('.gallery img').count()) === 3);
   record('Detail shows anti-scam warning before the WhatsApp action', await page.locator('#detail-warning').isVisible());
   const wa = await page.locator('a[href^="https://wa.me/"]').count();
   record('Detail shows WhatsApp CTA (consent granted)', wa === 1);
@@ -116,10 +127,16 @@ try {
   });
   record('Keyboard focus shows a visible outline', focusVisible);
   const small = await page.evaluate(() => [...document.querySelectorAll('a, button, summary, input')]
-    .filter((e) => !e.closest('.menu nav') && e.getBoundingClientRect().width > 0)
+    .filter((e) => !e.closest('.menu nav') && !e.classList.contains('card__anchor') && e.getBoundingClientRect().width > 0)
     .map((e) => ({ t: (e.textContent || e.getAttribute('aria-label') || e.tagName).trim().slice(0, 30), h: e.getBoundingClientRect().height, w: e.getBoundingClientRect().width }))
     .filter((e) => e.h < 44 && e.w < 44 || e.h < 40));
   record('Interactive controls are ~44px tall', small.length === 0, small.map((s) => `${s.t}:${Math.round(s.h)}`).join(', '));
+
+  const overlay = await page.evaluate(() => {
+    const a = document.querySelector('.card__anchor'); const c = document.querySelector('.card');
+    const r = getComputedStyle(a, '::after'); return r.position === 'absolute' && c.getBoundingClientRect().height >= 100;
+  });
+  record('Whole listing card is a single link target (stretched title link)', overlay);
 
   // Accessibility smoke (axe)
   for (const path of ['/', '/?type=kost', '/?q=zzzz', '/listing/lst-1']) {

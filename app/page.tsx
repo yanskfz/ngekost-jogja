@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ChevronRight, House, ImageIcon, MessageCircle, Search, ShieldCheck } from 'lucide-react';
+import { ArrowRight, ChevronRight, Search } from 'lucide-react';
 import { Header } from '@/components/site/Header';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { AntiScamWarning } from '@/components/trust/AntiScamWarning';
@@ -31,12 +31,9 @@ export default async function HomePage({ searchParams }: Props) {
       <Header />
       <main>
         <section className="hero" aria-labelledby="hero-title">
+          <img className="hero__art" src="/images/hero.webp" alt="" width={273} height={260} fetchPriority="high" decoding="async" />
           <h1 id="hero-title">Temukan tempat tinggal nyaman di Jogja</h1>
           <p>Kost dan kontrakan terverifikasi di Sleman dan Kota Jogja, dari pemilik langsung.</p>
-          <svg className="hero__art" viewBox="0 0 160 110" aria-hidden="true" focusable="false">
-            <path d="M0 110 L50 40 L90 85 L120 55 L160 110Z" fill="#cfe0c4" />
-            <path d="M70 110V50l10-30 10 30v60z" fill="#fff6d6" stroke="#b8932c" strokeWidth="2" />
-          </svg>
         </section>
 
         <form className="search" role="search" action="/#listing" method="get">
@@ -47,22 +44,32 @@ export default async function HomePage({ searchParams }: Props) {
           <input id="q" name="q" type="search" placeholder="Cari lokasi, kampus, atau wilayah…" defaultValue={query.q ?? ''} autoComplete="off" />
           {query.type ? <input type="hidden" name="type" value={query.type} /> : null}
           {query.area ? <input type="hidden" name="area" value={query.area} /> : null}
-          <button type="submit">Cari</button>
+          <button type="submit">
+            Cari <ArrowRight size={20} aria-hidden="true" />
+          </button>
         </form>
 
         <nav className="categories" aria-label="Kategori">
           <Link href="/?type=kost#listing" className="category category--kost">
-            <House size={40} aria-hidden="true" />
+            <img src="/images/cat-kost.webp" alt="" width={100} height={104} decoding="async" />
             <span>
-              <strong>Cari Kost</strong>
+              <strong>
+                Cari
+                <br />
+                Kost
+              </strong>
               <small>Kamar nyaman, lingkungan aman</small>
             </span>
             <ChevronRight size={20} aria-hidden="true" />
           </Link>
           <Link href="/?type=kontrakan#listing" className="category category--kontrakan">
-            <House size={40} aria-hidden="true" />
+            <img src="/images/cat-kontrakan.webp" alt="" width={98} height={97} decoding="async" />
             <span>
-              <strong>Cari Kontrakan</strong>
+              <strong>
+                Cari
+                <br />
+                Kontrakan
+              </strong>
               <small>Untuk keluarga, pasangan, atau teman</small>
             </span>
             <ChevronRight size={20} aria-hidden="true" />
@@ -73,21 +80,21 @@ export default async function HomePage({ searchParams }: Props) {
           <h2 id="trust-title">Semua listing di Ngekost Jogja melalui proses verifikasi:</h2>
           <ul>
             <li>
-              <ImageIcon size={28} aria-hidden="true" />
+              <img src="/images/trust-photo.webp" alt="" width={84} height={84} loading="lazy" decoding="async" />
               <span>
                 <strong>Minimal 3 foto</strong>
                 <small>Lihat kondisi aslinya</small>
               </span>
             </li>
             <li>
-              <MessageCircle size={28} aria-hidden="true" />
+              <img src="/images/trust-whatsapp.webp" alt="" width={84} height={84} loading="lazy" decoding="async" />
               <span>
                 <strong>WhatsApp bisa dihubungi</strong>
                 <small>Langsung chat ke pemilik</small>
               </span>
             </li>
             <li>
-              <ShieldCheck size={28} aria-hidden="true" />
+              <img src="/images/trust-shield.webp" alt="" width={84} height={84} loading="lazy" decoding="async" />
               <span>
                 <strong>Di-review admin</strong>
                 <small>Informasi lebih terpercaya</small>
@@ -102,7 +109,12 @@ export default async function HomePage({ searchParams }: Props) {
         </p>
 
         <section id="listing" aria-labelledby="listing-title" className="listings">
-          <h2 id="listing-title">{filtered ? 'Hasil pencarian' : 'Rekomendasi di sekitar kamu'}</h2>
+          <div className="listings__head">
+            <h2 id="listing-title">{filtered ? 'Hasil pencarian' : 'Rekomendasi di sekitar kamu'}</h2>
+            <Link href="/#listing" className="listings__all">
+              Lihat semua <ChevronRight size={18} aria-hidden="true" />
+            </Link>
+          </div>
           <div className="chips" role="group" aria-label="Filter">
             <Chip label="Semua jenis" href={withQuery({ type: undefined })} active={!query.type} />
             <Chip label="Kost" href={withQuery({ type: 'kost' })} active={query.type === 'kost'} />
@@ -136,7 +148,14 @@ export default async function HomePage({ searchParams }: Props) {
         <AntiScamWarning id="keamanan" />
       </main>
       <footer className="footer">
-        <p>Jogja tetap istimewa kalau kamu tinggal di tempat yang tepat.</p>
+        <p className="footer__quote">
+          Jogja tetap istimewa
+          <br />
+          kalau kamu tinggal di
+          <br />
+          tempat yang tepat.
+        </p>
+        <img className="footer__art" src="/images/footer-art.webp" alt="" width={481} height={196} loading="lazy" decoding="async" />
       </footer>
     </>
   );

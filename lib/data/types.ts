@@ -17,6 +17,8 @@ export const MODERATION_ACTIONS = ['approve', 'reject', 'hide', 'restore', 'expi
 export const REPORT_REASONS = ['suspected_scam', 'wrong_location', 'unavailable', 'misleading_price', 'abuse'] as const;
 export const REPORT_STATUSES = ['open', 'investigating', 'resolved', 'dismissed'] as const;
 
+export const PRICE_PERIODS = ['bulan', 'tahun'] as const;
+export type PricePeriod = (typeof PRICE_PERIODS)[number];
 export type ListingType = (typeof LISTING_TYPES)[number];
 export type Area = (typeof AREAS)[number];
 export type SubmitterType = (typeof SUBMITTER_ROLES)[number];
@@ -48,7 +50,9 @@ export type Listing = {
   address: string;
   map_latitude: number;
   map_longitude: number;
+  /** Displayed price amount in IDR. Name is historical; the unit is given by price_period. */
   price_monthly: number;
+  price_period: PricePeriod;
   deposit_information: string | null;
   facilities: string[];
   condition_details: string;
@@ -136,6 +140,7 @@ export type PublicListing = Pick<
   | 'map_latitude'
   | 'map_longitude'
   | 'price_monthly'
+  | 'price_period'
   | 'deposit_information'
   | 'facilities'
   | 'condition_details'

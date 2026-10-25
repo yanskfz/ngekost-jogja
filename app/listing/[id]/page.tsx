@@ -5,6 +5,7 @@ import { Header } from '@/components/site/Header';
 import { FacilityIcon } from '@/components/listings/facility-icon';
 import { AntiScamWarning } from '@/components/trust/AntiScamWarning';
 import { getPreviewDetail } from '@/lib/data/preview';
+import { LISTING_PHOTOS } from '@/components/listings/photos';
 import { areaLabel } from '@/lib/search/listings';
 
 export const dynamic = 'force-dynamic';
@@ -16,6 +17,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
   const detail = getPreviewDetail(id);
   if (!detail) notFound();
   const { listing, contactWhatsapp, imageCount } = detail;
+  const photo = LISTING_PHOTOS[listing.type];
   const waNumber = contactWhatsapp?.replace(/\D/g, '');
 
   return (
@@ -36,17 +38,17 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
           {Array.from({ length: imageCount }, (_, i) => (
             <img
               key={i}
-              src={`/images/placeholder-${listing.type}.svg`}
-              alt={`Foto contoh ${i + 1} dari ${imageCount}`}
-              width={400}
-              height={300}
+              src={photo.src}
+              alt={`Foto ${i + 1} dari ${imageCount}`}
+              width={photo.width}
+              height={photo.height}
               loading={i === 0 ? 'eager' : 'lazy'}
               decoding="async"
             />
           ))}
         </div>
         <p className="card__price">
-          {rupiah.format(listing.price_monthly)} <span>/ bulan</span>
+          {rupiah.format(listing.price_monthly)} <span>/ {listing.price_period}</span>
         </p>
         {listing.deposit_information ? <p>{listing.deposit_information}</p> : null}
         <h2>Fasilitas</h2>

@@ -14,6 +14,9 @@ consents, moderation events, reports, and import batches.
 SQLite is a development/test tool only and is never imported by app routes. The preview page states that its data is
 dummy and not persistent. All fixture emails use `@example.test` and all phone numbers and addresses are invented.
 
+`price_period` (`bulan` or `tahun`) states the unit of `price_monthly` (the field name is historical). The Option 3 reference prices
+kost per month and kontrakan per year; the period is stored per listing, not derived from type.
+
 ## Rules (`lib/data/rules.ts`)
 
 - Public visibility: `status = approved` and `expires_at` in the future. Nothing else is public.

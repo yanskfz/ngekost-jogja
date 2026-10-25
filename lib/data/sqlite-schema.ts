@@ -20,6 +20,7 @@ CREATE TABLE listings (
   map_latitude REAL NOT NULL,
   map_longitude REAL NOT NULL,
   price_monthly INTEGER NOT NULL CHECK (price_monthly > 0),
+  price_period TEXT NOT NULL DEFAULT 'bulan' CHECK (price_period IN ('bulan','tahun')),
   deposit_information TEXT,
   facilities TEXT NOT NULL DEFAULT '[]',
   condition_details TEXT NOT NULL,

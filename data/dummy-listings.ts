@@ -16,6 +16,8 @@ type Seed = {
   lat: number;
   lng: number;
   price: number;
+  period: Listing['price_period'];
+  facilities: string[];
   status: ListingStatus;
   owner: string;
   role: Listing['role'];
@@ -25,14 +27,14 @@ type Seed = {
 };
 
 const SEEDS: Seed[] = [
-  { n: 1, title: 'Kost Putri Contoh Melati', type: 'kost', area: 'sleman', address: 'Jl. Contoh Melati No. 1, Sleman (dummy)', lat: -7.7681, lng: 110.3777, price: 900000, status: 'approved', owner: 'acc-owner-1', role: 'owner', confirmedDaysAgo: 10, images: 3 },
-  { n: 2, title: 'Kontrakan Contoh Kenanga', type: 'kontrakan', area: 'kota_jogja', address: 'Jl. Contoh Kenanga No. 2, Kota Jogja (dummy)', lat: -7.8014, lng: 110.3647, price: 2500000, status: 'approved', owner: 'acc-broker-1', role: 'broker', confirmedDaysAgo: 30, images: 3 },
-  { n: 3, title: 'Kost Campur Contoh Anggrek', type: 'kost', area: 'kota_jogja', address: 'Jl. Contoh Anggrek No. 3, Kota Jogja (dummy)', lat: -7.7829, lng: 110.3671, price: 1200000, status: 'approved', owner: 'acc-owner-2', role: 'owner', confirmedDaysAgo: 55, images: 3 },
-  { n: 4, title: 'Kost Putra Contoh Dahlia (menunggu review)', type: 'kost', area: 'sleman', address: 'Jl. Contoh Dahlia No. 4, Sleman (dummy)', lat: -7.7592, lng: 110.3912, price: 750000, status: 'pending', owner: 'acc-owner-1', role: 'owner', confirmedDaysAgo: null, images: 3 },
-  { n: 5, title: 'Kost Contoh Teratai (disembunyikan)', type: 'kost', area: 'sleman', address: 'Jl. Contoh Teratai No. 5, Sleman (dummy)', lat: -7.7455, lng: 110.4021, price: 650000, status: 'hidden', owner: 'acc-broker-1', role: 'broker', confirmedDaysAgo: 20, images: 3 },
-  { n: 6, title: 'Kontrakan Contoh Seruni (kedaluwarsa)', type: 'kontrakan', area: 'kota_jogja', address: 'Jl. Contoh Seruni No. 6, Kota Jogja (dummy)', lat: -7.8102, lng: 110.3699, price: 3000000, status: 'approved', owner: 'acc-owner-2', role: 'owner', confirmedDaysAgo: 75, images: 3 },
-  { n: 7, title: 'Kost Contoh Kamboja (draft)', type: 'kost', area: 'kota_jogja', address: 'Jl. Contoh Kamboja No. 7, Kota Jogja (dummy)', lat: -7.7901, lng: 110.3601, price: 800000, status: 'draft', owner: 'acc-owner-2', role: 'owner', confirmedDaysAgo: null, images: 1 },
-  { n: 8, title: 'Kost Contoh Flamboyan (ditolak)', type: 'kost', area: 'sleman', address: 'Jl. Contoh Flamboyan No. 8, Sleman (dummy)', lat: -7.7733, lng: 110.3855, price: 500000, status: 'rejected', owner: 'acc-broker-1', role: 'broker', confirmedDaysAgo: null, images: 2 },
+  { n: 1, title: 'Kost Puri Timoho', type: 'kost', area: 'kota_jogja', address: 'Timoho, Kec. Umbulharjo, Kota Jogja', lat: -7.8014, lng: 110.3896, price: 1300000, period: 'bulan', facilities: ['1 kamar', 'WiFi', 'AC'], status: 'approved', owner: 'acc-owner-1', role: 'owner', confirmedDaysAgo: 10, images: 3 },
+  { n: 2, title: 'Rumah Kontrakan Sari Asri', type: 'kontrakan', area: 'sleman', address: 'Depok, Kec. Sleman, Kab. Sleman', lat: -7.7681, lng: 110.3777, price: 18000000, period: 'tahun', facilities: ['2 kamar', '1 kamar mandi', 'Carport'], status: 'approved', owner: 'acc-broker-1', role: 'broker', confirmedDaysAgo: 30, images: 3 },
+  { n: 3, title: 'Kost Campur Contoh Anggrek', type: 'kost', area: 'kota_jogja', address: 'Jl. Contoh Anggrek No. 3, Kota Jogja (dummy)', lat: -7.7829, lng: 110.3671, price: 1200000, period: 'bulan', facilities: ['1 kamar', 'WiFi', 'Kamar mandi dalam'], status: 'approved', owner: 'acc-owner-2', role: 'owner', confirmedDaysAgo: 55, images: 3 },
+  { n: 4, title: 'Kost Putra Contoh Dahlia (menunggu review)', type: 'kost', area: 'sleman', address: 'Jl. Contoh Dahlia No. 4, Sleman (dummy)', lat: -7.7592, lng: 110.3912, price: 750000, period: 'bulan', facilities: ['1 kamar', 'WiFi', 'Kamar mandi dalam'], status: 'pending', owner: 'acc-owner-1', role: 'owner', confirmedDaysAgo: null, images: 3 },
+  { n: 5, title: 'Kost Contoh Teratai (disembunyikan)', type: 'kost', area: 'sleman', address: 'Jl. Contoh Teratai No. 5, Sleman (dummy)', lat: -7.7455, lng: 110.4021, price: 650000, period: 'bulan', facilities: ['1 kamar', 'WiFi', 'Kamar mandi dalam'], status: 'hidden', owner: 'acc-broker-1', role: 'broker', confirmedDaysAgo: 20, images: 3 },
+  { n: 6, title: 'Kontrakan Contoh Seruni (kedaluwarsa)', type: 'kontrakan', area: 'kota_jogja', address: 'Jl. Contoh Seruni No. 6, Kota Jogja (dummy)', lat: -7.8102, lng: 110.3699, price: 3000000, period: 'bulan', facilities: ['1 kamar', 'WiFi', 'Kamar mandi dalam'], status: 'approved', owner: 'acc-owner-2', role: 'owner', confirmedDaysAgo: 75, images: 3 },
+  { n: 7, title: 'Kost Contoh Kamboja (draft)', type: 'kost', area: 'kota_jogja', address: 'Jl. Contoh Kamboja No. 7, Kota Jogja (dummy)', lat: -7.7901, lng: 110.3601, price: 800000, period: 'bulan', facilities: ['1 kamar', 'WiFi', 'Kamar mandi dalam'], status: 'draft', owner: 'acc-owner-2', role: 'owner', confirmedDaysAgo: null, images: 1 },
+  { n: 8, title: 'Kost Contoh Flamboyan (ditolak)', type: 'kost', area: 'sleman', address: 'Jl. Contoh Flamboyan No. 8, Sleman (dummy)', lat: -7.7733, lng: 110.3855, price: 500000, period: 'bulan', facilities: ['1 kamar', 'WiFi', 'Kamar mandi dalam'], status: 'rejected', owner: 'acc-broker-1', role: 'broker', confirmedDaysAgo: null, images: 2 },
 ];
 
 export function buildDummyData(now: Date = new Date()): DevData {
@@ -63,8 +65,9 @@ export function buildDummyData(now: Date = new Date()): DevData {
       map_latitude: s.lat,
       map_longitude: s.lng,
       price_monthly: s.price,
+      price_period: s.period,
       deposit_information: 'Informasi deposit contoh (dummy). Jangan transfer sebelum survei.',
-      facilities: ['Kamar mandi dalam', 'Wi-Fi', 'Parkir motor'],
+      facilities: s.facilities,
       condition_details: 'Deskripsi kondisi contoh (dummy): kamar bersih, ventilasi baik, listrik dan air terpisah.',
       contact_name: `Kontak Contoh ${s.n}`,
       contact_whatsapp: `+62-800-0000-01${String(s.n).padStart(2, '0')}`,

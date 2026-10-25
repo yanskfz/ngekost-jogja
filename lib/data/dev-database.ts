@@ -54,8 +54,8 @@ export class DevDatabase {
     }
     for (const l of data.listings) {
       run(
-        'INSERT INTO listings VALUES (' + Array(24).fill('?').join(',') + ')',
-        l.id, l.title, l.type, l.area, l.address, l.map_latitude, l.map_longitude, l.price_monthly, l.deposit_information,
+        'INSERT INTO listings VALUES (' + Array(25).fill('?').join(',') + ')',
+        l.id, l.title, l.type, l.area, l.address, l.map_latitude, l.map_longitude, l.price_monthly, l.price_period, l.deposit_information,
         JSON.stringify(l.facilities), l.condition_details, l.contact_name, l.contact_whatsapp, l.source_url, l.role, l.status,
         l.owner_id, l.source, l.permission_status, l.verification_status, l.last_confirmed_at, l.expires_at, l.created_at, l.updated_at,
       );
