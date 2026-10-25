@@ -85,3 +85,54 @@ Before handoff or redeploy, Claude Code must:
 ## Approval gate
 
 Design changes that alter the palette, hierarchy, trust messaging, homepage sections, or primary search flow require product-owner approval before implementation.
+
+## Hard requirements — iteration 2
+
+These requirements are mandatory for the next implementation and override any earlier interpretation of the anti-scam banner or anonymous access.
+
+### Blocking anti-scam consent modal
+
+- The long inline anti-scam copy must not be the only protection.
+- On first entry to the public experience, show a blocking modal before the user can browse or contact listings.
+- The modal must be concise and scannable. Keep the full safety explanation available behind a “Baca panduan lengkap” disclosure or link.
+- The modal cannot be dismissed by clicking outside, pressing Escape, or using a close icon before consent.
+- Consent must be an explicit unchecked checkbox, for example: “Saya paham dan akan verifikasi langsung sebelum membayar.”
+- The primary action remains disabled until the checkbox is checked.
+- The user must click an explicit action such as “Saya paham, lanjut melihat listing” to close the modal.
+- Do not pre-check the checkbox.
+- Keyboard users must be able to reach the checkbox and primary action; focus must remain inside the modal while it is open.
+- On the dummy/read-only preview, store only the local consent state needed to avoid reopening on every page navigation. Do not claim this is production consent storage.
+- In the hosted product, consent must be recorded with timestamp, consent text version, and account/session identifier before allowing the protected experience.
+- The warning must appear again at the WhatsApp/contact action. Modal consent does not remove the contact-point warning.
+
+### Anonymous listing limit
+
+- Seed five public dummy listings for this iteration.
+- An unauthenticated visitor can see exactly three complete listing results.
+- The fourth and fifth results must be represented by a clear locked teaser or access gate; do not expose their full detail, photos, WhatsApp, or private fields.
+- The gate must explain that signup/login is required to view the remaining two listings.
+- After successful signup/login, the user can see all five public listings.
+- This limit applies to listing results and recommendation sections; it must not be bypassed by direct listing URLs, query parameters, or client-side-only hiding.
+- While the app is still read-only/dummy, implement the state boundary explicitly and label signup as preview/demo behavior if persistence is unavailable.
+- Do not collect payment, deposit, booking fee, or transfer data as part of the gate.
+
+### Asset and image-generation policy
+
+- Claude Code must not generate new images or use ImageGen for this iteration.
+- Use only the committed Option 3 reference, the newly committed anti-scam screenshot reference, and existing repository assets.
+- Asset slicing/cropping is required where the reference contains reusable visual elements: hero art, logo, category cards, trust icons, listing photos, warning illustration, and footer art.
+- Cropping, resizing, WebP conversion, compression, color correction, and small cleanup are allowed.
+- Do not create substitute illustrations, new characters, new backgrounds, generic stock images, or screenshot-as-UI.
+- Keep an asset manifest mapping each output asset to its source image and crop/transform. Add or update docs/DESIGN_ASSET_MANIFEST.md.
+- Every shipped image must have fixed dimensions/aspect-ratio behavior, an appropriate alt, and lazy loading when below the fold.
+
+### New acceptance tests
+
+- First visit opens the blocking safety modal.
+- Modal cannot close before explicit checkbox consent.
+- Escape, backdrop click, and browser refresh before consent do not bypass the modal.
+- After consent, the listing experience is accessible.
+- Anonymous state exposes exactly three complete listings and one locked gate for the remaining two.
+- Direct navigation to the fourth/fifth listing does not bypass the anonymous limit.
+- Authenticated/demo-unlocked state exposes all five listings.
+- E2E verifies the above at 390x844 and records results in design-qa.md.
