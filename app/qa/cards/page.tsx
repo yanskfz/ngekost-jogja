@@ -37,6 +37,7 @@ const base: ListingCardData = {
   expires_at: null,
   evidence: ALL_OK,
   confirmed_label: 'Dikonfirmasi 5 hari lalu',
+  confirmed_short: '5 hari lalu',
 };
 
 /** Synthetic worst-case content for layout QA. Disabled unless QA_FIXTURES=1 (set only by the E2E runner). */
@@ -48,7 +49,7 @@ const QA_CARDS: ListingCardData[] = [
   { ...base, id: 'qa-one-facility', title: 'Kost Satu Fasilitas', facilities: ['1 kamar'] },
   { ...base, id: 'qa-yearly-huge', type: 'kontrakan', title: 'Rumah Kontrakan Harga Tahunan Besar', price_monthly: 1250000000, price_period: 'tahun', facilities: ['3 kamar', '2 kamar mandi', 'Carport'] },
   { ...base, id: 'qa-monthly', type: 'kontrakan', title: 'Rumah Kontrakan Bulanan', price_monthly: 2500000, price_period: 'bulan', facilities: ['2 kamar', '1 kamar mandi', 'Carport'] },
-  { ...base, id: 'qa-no-evidence', title: 'Kost Tanpa Bukti Tercatat', evidence: ALL_OK.map((e) => ({ ...e, ok: false })), last_confirmed_at: null, confirmed_label: 'Belum dikonfirmasi', availability: 'unknown' },
+  { ...base, id: 'qa-no-evidence', title: 'Kost Tanpa Bukti Tercatat', evidence: ALL_OK.map((e) => ({ ...e, ok: false })), last_confirmed_at: null, confirmed_label: 'Belum dikonfirmasi', confirmed_short: null, availability: 'unknown' },
   { ...base, id: 'qa-broker-undisclosed', title: 'Kost Agen Biaya Belum Dicantumkan dengan Judul yang Cukup Panjang', role: 'broker', broker_fee_status: 'undisclosed', availability: 'limited' },
   { ...base, id: 'qa-unavailable', title: 'Kost Tidak Tersedia', availability: 'unavailable' },
 ];

@@ -376,8 +376,21 @@ try {
     record('Role and fee are shown only when there is a fee: owner cards show neither; the agen card with a fee shows "Agen" and the fee', (await card('lst-1').locator('.tag--role').count()) === 0 && (await card('lst-3').locator('.tag--role').count()) === 0 && (await card('lst-1').locator('.card__fee').count()) === 0 && (await card('lst-2').locator('.tag--role').innerText()) === 'Agen', '', 'P1');
     const st = async (id) => (await card(id).locator('.card__status').innerText()).replace(/\s+/g, ' ');
     const s1 = await st('lst-1'), s2 = await st('lst-2'), s3 = await st('lst-3');
-    record('Freshness and availability row on every card', /Tersedia/.test(s1) && /Dikonfirmasi 10 hari lalu/.test(s1) && /Ketersediaan belum dikonfirmasi/.test(s2) && /Dikonfirmasi 30 hari lalu/.test(s2) && /Tersisa sedikit/.test(s3) && /Dikonfirmasi 1 bulan lalu/.test(s3), `${s1} | ${s2} | ${s3}`, 'P1');
-    record('Availability "unknown" is not styled or worded as available', (await card('lst-2').locator('.avail--muted').count()) === 1 && (await card('lst-2').locator('.avail--ok').count()) === 0 && !/^Tersedia/.test(s2), '', 'P1');
+    const st1 = async (id) => (await card(id).locator('.card__status-text').innerText()).replace(/\s+/g, ' ').trim();
+    const t1 = await st1('lst-1'), t2 = await st1('lst-2'), t3 = await st1('lst-3');
+    record('Freshness and availability share one short line on every card', t1 === 'Tersedia · 10 hari lalu' && t2 === 'Belum pasti · 30 hari lalu' && t3 === 'Tersisa sedikit · 1 bulan lalu', `${t1} | ${t2} | ${t3}`, 'P1');
+    const lines = await p.locator('.card__status').evaluateAll((els) => els.map((e) => { const t = e.querySelector('.card__status-text'); const cs = getComputedStyle(t); return { lines: Math.round(t.getBoundingClientRect().height / parseFloat(cs.lineHeight)), clipped: t.scrollWidth > t.clientWidth, nowrap: cs.whiteSpace === 'nowrap' }; }));
+    record('Status line: exactly one line, not clipped at 390px for the three real cards', lines.length === 3 && lines.every((l) => l.lines === 1 && l.nowrap && !l.clipped), JSON.stringify(lines), 'P1');
+    const full = (await card('lst-2').locator('.card__status').evaluate((e) => e.textContent ?? '')).replace(/\s+/g, ' ');
+    for (const w of [360, 375]) {
+      const small = await newPage({ width: w, track: false });
+      await small.goto(BASE);
+      const l = await small.locator('.card__status-text').evaluateAll((els) => els.map((e) => ({ lines: Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight)), clipped: e.scrollWidth > e.clientWidth })));
+      record(`Status line: one line and not clipped at ${w}px for the three real cards (including the unknown-availability card)`, l.length === 3 && l.every((x) => x.lines === 1 && !x.clipped), JSON.stringify(l), 'P1');
+      await small.context().close();
+    }
+    record('Status line: the full wording (availability and confirmation) stays in the tooltip and screen-reader text', /Ketersediaan belum dikonfirmasi/.test(full) && /Dikonfirmasi 30 hari lalu/.test(full) && /Ketersediaan belum dikonfirmasi/.test(await card('lst-2').locator('.card__status').getAttribute('title')), '', 'P2');
+    record('Availability "unknown" is not styled or worded as available', (await card('lst-2').locator('.avail--muted').count()) === 1 && (await card('lst-2').locator('.avail--ok').count()) === 0 && !/^Tersedia/.test(t2), '', 'P1');
     const fee2 = await card('lst-2').locator('.card__fee').innerText();
     record('Broker-fee transparency: agen card states the fee and that Ngekost does not collect it; owner card has no fee line', /1\.500\.000/.test(fee2) && /tidak memungut/.test(fee2) && (await card('lst-1').locator('.card__fee').count()) === 0, fee2, 'P1');
     const bodyHtml = await p.content();
@@ -407,6 +420,8 @@ try {
     record('Card address (stress): the 160-character address becomes "Kec. Depok, Kab. Sleman" on one line', stress[2].text === 'Kec. Depok, Kab. Sleman' && stress[2].lines === 1 && /RT 04 RW 09/.test(stress[2].full), JSON.stringify(stress[2]).slice(0, 160), 'P1');
     record('Card address (stress): an unbroken 100-character string is cut with an ellipsis on one line, not wrapped', stress[1].lines === 1 && stress[1].clipped && /PanjangTanpaSpasi/.test(stress[1].full), '', 'P1');
     record('Card address (stress): every stress card keeps its address to one line', stress.every((s) => s.lines === 1), stress.map((s) => s.lines).join(','), 'P1');
+    const statusLines = await q.locator('.card__status-text').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight))));
+    record('Status line (stress): every stress card keeps availability and confirmation to one line', statusLines.length === 10 && statusLines.every((n) => n === 1), statusLines.join(','), 'P1');
     await shot(q, '16-stress-cards-address-390.png', q.locator('.cards'));
     await q.context().close();
     await p.context().close();
@@ -587,12 +602,14 @@ try {
     await p.getByText('Filter & urutkan').focus();
     await p.keyboard.press('Enter');
     await shot(p, '13-filter-panel-390.png', panel);
-    record('Filters: every control has a visible label (price, facilities, role, availability, sort)', (await p.getByLabel('Harga per bulan').count()) === 1 && (await p.getByLabel('Pemasang iklan').count()) === 1 && (await p.getByLabel('Urutkan', { exact: true }).count()) === 1 && (await p.getByLabel('WiFi').count()) === 1 && (await p.getByLabel('Hanya yang masih tersedia').count()) === 1, '', 'P2');
-    await p.getByLabel('Pemasang iklan').selectOption('broker');
+    record('Filters: every control has a visible label (price, facilities, availability, sort) and there is no role control', (await p.getByLabel('Harga per bulan').count()) === 1 && (await p.getByLabel('Pemasang iklan').count()) === 0 && (await p.getByLabel('Urutkan', { exact: true }).count()) === 1 && (await p.getByLabel('WiFi').count()) === 1 && (await p.getByLabel('Hanya yang masih tersedia').count()) === 1 && !/Pemilik dan agen/.test(await p.locator('details.filters').innerText()), '', 'P1');
+    await p.getByLabel('Harga per bulan').selectOption('1to2');
     await p.getByRole('button', { name: 'Terapkan' }).click();
-    await p.waitForURL(/role=broker/);
-    record('Filters: role "Agen" shows only broker listings among the allowed set', (await idsOnPage(p)).join() === 'lst-2', '', 'P1');
-    record('Filters: the open panel shows the active-filter count and keeps the choice', /Filter & urutkan \(1\)/.test(await p.locator('details.filters summary').innerText()) && (await p.getByLabel('Pemasang iklan').inputValue()) === 'broker' && (await p.locator('details.filters').evaluate((d) => d.open)), '', 'P2');
+    await p.waitForURL(/price=1to2/);
+    record('Filters: the price band is applied to the allowed set', (await idsOnPage(p)).join() === 'lst-1,lst-2,lst-3', '', 'P1');
+    record('Filters: the open panel shows the active-filter count and keeps the choice', /Filter & urutkan \(1\)/.test(await p.locator('details.filters summary').innerText()) && (await p.getByLabel('Harga per bulan').inputValue()) === '1to2' && (await p.locator('details.filters').evaluate((d) => d.open)), '', 'P2');
+    await p.goto(`${BASE}/?role=broker`);
+    record('Role filter removed: a leftover ?role= parameter is ignored (no filtering, no active-filter badge)', (await idsOnPage(p)).join() === 'lst-1,lst-2,lst-3' && !(await p.locator('details.filters').evaluate((d) => d.open)), '', 'P1');
     await p.goto(`${BASE}/?fac=wifi`);
     record('Filters: facility WiFi', (await idsOnPage(p)).join() === 'lst-1,lst-3', '', 'P1');
     await p.goto(`${BASE}/?fac=wifi&fac=ac`);
@@ -618,12 +635,12 @@ try {
     record('Filters negative: a script-like search string is rendered as text and finds nothing', (await p.locator('.empty').isVisible()) && (await p.locator('#q').inputValue()) === '<script>alert(1)</script>', '', 'P0');
     await p.goto(`${BASE}/?q=${'a'.repeat(300)}`);
     record('Filters edge: a 300-character query is truncated safely', (await p.locator('#q').inputValue()).length === 100, '', 'P2');
-    await p.goto(`${BASE}/?q=depok&role=broker&sort=price_asc`);
+    await p.goto(`${BASE}/?q=depok&fac=wifi&sort=price_asc`);
     await p.fill('#q', 'sleman');
     await p.click('.search button');
     await p.waitForURL(/q=sleman/);
-    record('Filters: a new search keeps the active filters and sort', /role=broker/.test(p.url()) && /sort=price_asc/.test(p.url()), p.url(), 'P1');
-    record('Filters negative: locked listings never appear through role/price/sort/search for anonymous visitors', await (async () => {
+    record('Filters: a new search keeps the active filters and sort', /fac=wifi/.test(p.url()) && /sort=price_asc/.test(p.url()), p.url(), 'P1');
+    record('Filters negative: locked listings never appear through price/sort/search/leftover params for anonymous visitors', await (async () => {
       let ok = true;
       for (const qs of ['role=broker&sort=price_asc', 'price=lt1', 'q=cempaka', 'q=mawar', 'avail=1&sort=recent', 'fac=parkir']) {
         await p.goto(`${BASE}/?${qs}`);
@@ -642,8 +659,8 @@ try {
     record('Sort (signed in): all five listings by price ascending', (await idsOnPage(u)).join() === 'lst-9,lst-3,lst-1,lst-2,lst-10', '', 'P1');
     await u.goto(`${BASE}/?avail=1&sort=recent`);
     record('Filters (signed in): availability + recency over all five', (await idsOnPage(u)).join() === 'lst-9,lst-1,lst-3', (await idsOnPage(u)).join(), 'P1');
-    await u.goto(`${BASE}/?role=broker&fac=parkir`);
-    record('Filters (signed in): broker + parking reaches the previously locked listing', (await idsOnPage(u)).join() === 'lst-2,lst-10', '', 'P1');
+    await u.goto(`${BASE}/?fac=parkir`);
+    record('Filters (signed in): parking reaches the previously locked listing', (await idsOnPage(u)).join() === 'lst-2,lst-10', '', 'P1');
     await u.goto(`${BASE}/listing/lst-10`);
     record('Detail (signed in): "Tidak tersedia" and undisclosed broker fee are shown plainly', /Tidak tersedia/.test(await u.getByTestId('status-panel').innerText()) && /belum dicantumkan/.test(await u.getByTestId('fee-note').innerText()), '', 'P1');
     await u.context().close();

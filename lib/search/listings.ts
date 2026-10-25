@@ -1,6 +1,6 @@
 import { isStillAvailable } from '@/lib/format';
 import type { TrustItem } from '@/lib/data/trust';
-import type { Area, ListingType, PricePeriod, PublicListing, SubmitterType } from '@/lib/data/types';
+import type { Area, ListingType, PricePeriod, PublicListing } from '@/lib/data/types';
 
 export const PRICE_BANDS = ['lt1', '1to2', 'gt2'] as const;
 export type PriceBand = (typeof PRICE_BANDS)[number];
@@ -30,7 +30,6 @@ export type ListingQuery = {
   area?: Area;
   price?: PriceBand;
   fac?: FacilityKey[];
-  role?: SubmitterType;
   avail?: boolean;
   sort?: Sort;
 };
@@ -39,6 +38,8 @@ export type ListingQuery = {
 export type ListingCardData = Omit<PublicListing, 'contact_whatsapp' | 'contact_name'> & {
   evidence: TrustItem[];
   confirmed_label: string;
+  /** Age only, for one-line cards (null when never confirmed). */
+  confirmed_short: string | null;
 };
 
 const AREA_LABEL: Record<Area, string> = { sleman: 'Sleman', kota_jogja: 'Kota Jogja' };
@@ -75,7 +76,6 @@ export function parseListingQuery(params: Params): ListingQuery {
     area: pick(first(params.area), ['sleman', 'kota_jogja'] as const),
     price: pick(first(params.price), PRICE_BANDS),
     fac: fac.length ? fac : undefined,
-    role: pick(first(params.role), ['owner', 'broker'] as const),
     avail: first(params.avail) === '1' ? true : undefined,
     sort: pick(first(params.sort), SORTS),
   };
@@ -83,7 +83,7 @@ export function parseListingQuery(params: Params): ListingQuery {
 
 /** Number of active filters, excluding the text query and sort (shown on the filter button). */
 export function activeFilterCount(query: ListingQuery): number {
-  return [query.type, query.area, query.price, query.role, query.avail].filter(Boolean).length + (query.fac?.length ?? 0);
+  return [query.type, query.area, query.price, query.avail].filter(Boolean).length + (query.fac?.length ?? 0);
 }
 
 /** Case-insensitive match across title, neighborhood, area, and facilities, combined with every active filter. */
@@ -92,7 +92,6 @@ export function filterListings<T extends ListingCardData>(listings: T[], query: 
   return listings.filter((l) => {
     if (query.type && l.type !== query.type) return false;
     if (query.area && l.area !== query.area) return false;
-    if (query.role && l.role !== query.role) return false;
     if (query.avail && !isStillAvailable(l.availability)) return false;
     if (query.price && priceBandOf(monthlyEquivalent(l.price_monthly, l.price_period)) !== query.price) return false;
     if (query.fac?.length) {
@@ -125,7 +124,6 @@ export function toQueryString(query: ListingQuery): string {
   if (query.area) sp.set('area', query.area);
   if (query.price) sp.set('price', query.price);
   for (const f of query.fac ?? []) sp.append('fac', f);
-  if (query.role) sp.set('role', query.role);
   if (query.avail) sp.set('avail', '1');
   if (query.sort) sp.set('sort', query.sort);
   const s = sp.toString();

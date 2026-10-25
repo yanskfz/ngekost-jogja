@@ -33,7 +33,7 @@ export default async function HomePage({ searchParams }: Props) {
   // A listing the visitor reported disappears from their results immediately (preview model of report-hides-listing).
   const { allowed, lockedCount } = gateListings(listPreviewCards(new Date(), await getReportedIds()), await isDemoSignedIn());
   const results = sortListings(filterListings(allowed, query), query.sort);
-  const filtered = Boolean(query.q || query.type || query.area || query.price || query.fac || query.role || query.avail);
+  const filtered = Boolean(query.q || query.type || query.area || query.price || query.fac || query.avail);
   const withQuery = (patch: Partial<ListingQuery>) => `${toQueryString({ ...query, ...patch })}#listing`;
 
   return (
@@ -55,7 +55,6 @@ export default async function HomePage({ searchParams }: Props) {
           {query.type ? <input type="hidden" name="type" value={query.type} /> : null}
           {query.area ? <input type="hidden" name="area" value={query.area} /> : null}
           {query.price ? <input type="hidden" name="price" value={query.price} /> : null}
-          {query.role ? <input type="hidden" name="role" value={query.role} /> : null}
           {query.avail ? <input type="hidden" name="avail" value="1" /> : null}
           {query.sort ? <input type="hidden" name="sort" value={query.sort} /> : null}
           {(query.fac ?? []).map((f) => (

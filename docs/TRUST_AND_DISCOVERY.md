@@ -10,12 +10,12 @@ The Product Owner approved nine UI additions. The Vercel preview stays dummy/rea
 | # | Addition | Where | Notes |
 | --- | --- | --- | --- |
 | 1 | Trust evidence row/badge | `components/listings/TrustBadges.tsx`, `lib/data/trust.ts` | Cards show only checks that passed. The detail page lists all five checks, marks missing ones "belum", and states it is not a safety guarantee. |
-| 2 | Last-confirmed date and availability | `lib/format.ts`, card status row, detail status panel | Four availability values; `unknown` reads "Ketersediaan belum dikonfirmasi", never "Tersedia". |
+| 2 | Last-confirmed date and availability | `lib/format.ts`, card status line, detail status panel | Four availability values; on the detail page `unknown` reads "Ketersediaan belum dikonfirmasi", never "Tersedia". List cards merge availability and age into one line ("Tersedia · 10 hari lalu") using short wording; unknown shows "Belum pasti" because the full label does not fit on phones up to 375 px. The full wording stays in the tooltip and screen-reader text. |
 | 3 | Approximate map preview and Open in Maps | `lib/location/*`, `components/listings/ApproxMap.tsx` | See "Location privacy". |
 | 4 | Role badge and broker-fee transparency (narrowed by the Product Owner) | `lib/format.ts` (`brokerFeeNote`), cards, detail | Shown only when there is a fee or the fee is not stated: then the card and detail show "Agen" plus the fee note. Owner listings and agen listings with no fee show neither the role nor any "no fee" text. The role is still stored and visible to admins. |
 | 5 | Report listing flow | `app/listing/[id]/laporkan`, `submitReport`, `lib/reporting/*` | Demo model: hides the listing for the reporter's browser only. |
 | 6 | "Jadwalkan survei" WhatsApp template | `lib/whatsapp/survey.ts`, `components/listings/ContactActions.tsx` | Same consent gating as the WhatsApp button. |
-| 7 | Expanded filters and sorting | `lib/search/listings.ts`, `components/listings/FilterPanel.tsx` | GET form, works without JavaScript. |
+| 7 | Expanded filters and sorting | `lib/search/listings.ts`, `components/listings/FilterPanel.tsx` | GET form, works without JavaScript. Price band, facilities, availability, and sort; the role filter was removed by the Product Owner (a leftover `?role=` is ignored). |
 | 8 | Three-photo distinctness/content guidance | `components/trust/PhotoGuidance.tsx`, `lib/validation/photos.ts` | Structural validation only (see limits). |
 | 9 | Revised concise consent modal | `components/trust/ConsentModal.tsx` | Three safety actions; consent version bumped to `2026-10-v2`. |
 
@@ -53,6 +53,12 @@ New or changed listing fields: `neighborhood_label` (public), `address` and `map
 ## Product Owner decision: role and fee are shown only when there is a fee
 
 The Product Owner decided that "no broker fee" needs no mention and that the role (agen or not) need not be shown either. Implemented as: the role badge and the fee line appear together, only for an agen listing whose fee is disclosed or not stated. This departs from the design document's wording that the role "must be shown honestly" and "never implied to be owner-only"; the data still records the role, the homepage copy still says listings come "dari pemilik atau agen", and the "Pemasang iklan" filter still exists. Whether that filter should stay while the role is mostly hidden is an open question in `BRIEF.md`.
+
+## Further Product Owner decisions after QA
+
+- The role filter ("Pemasang iklan") was removed.
+- Dummy photos: accepted as labelled sample crops (the note on the detail gallery). Real distinct photos are still required before any real listing.
+- Availability and the confirmation age share one line on list cards. Short card wording: Tersedia, Tersisa sedikit, Tidak tersedia, **Belum pasti** (unknown). "Belum pasti" is the implementer's shortening of the approved label and needs confirmation.
 
 ## Independent QA findings F1-F6 (handled)
 

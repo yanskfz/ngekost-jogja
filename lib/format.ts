@@ -10,13 +10,19 @@ export function daysSince(iso: string, now: Date): number {
   return Math.max(0, Math.floor((now.getTime() - new Date(iso).getTime()) / DAY_MS));
 }
 
-export function confirmedLabel(lastConfirmedAt: string | null, now: Date): string {
-  if (!lastConfirmedAt) return 'Belum dikonfirmasi';
+/** Age of the last confirmation without a verb ("10 hari lalu"), or null when there is none. Used on one-line cards. */
+export function confirmedShort(lastConfirmedAt: string | null, now: Date): string | null {
+  if (!lastConfirmedAt) return null;
   const days = daysSince(lastConfirmedAt, now);
-  if (days === 0) return 'Dikonfirmasi hari ini';
-  if (days === 1) return 'Dikonfirmasi kemarin';
-  if (days <= 30) return `Dikonfirmasi ${days} hari lalu`;
-  return `Dikonfirmasi ${Math.floor(days / 30)} bulan lalu`;
+  if (days === 0) return 'hari ini';
+  if (days === 1) return 'kemarin';
+  if (days <= 30) return `${days} hari lalu`;
+  return `${Math.floor(days / 30)} bulan lalu`;
+}
+
+export function confirmedLabel(lastConfirmedAt: string | null, now: Date): string {
+  const short = confirmedShort(lastConfirmedAt, now);
+  return short ? `Dikonfirmasi ${short}` : 'Belum dikonfirmasi';
 }
 
 const dateFormat = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' });
@@ -28,6 +34,14 @@ export const AVAILABILITY_LABEL: Record<Availability, string> = {
   limited: 'Tersisa sedikit',
   unavailable: 'Tidak tersedia',
   unknown: 'Ketersediaan belum dikonfirmasi',
+};
+
+/** Shorter wording for one-line cards. The detail page and screen-reader text keep the full labels above. */
+export const AVAILABILITY_SHORT: Record<Availability, string> = {
+  available: 'Tersedia',
+  limited: 'Tersisa sedikit',
+  unavailable: 'Tidak tersedia',
+  unknown: 'Belum pasti',
 };
 
 /** Whether a listing may be offered under the "masih tersedia" filter. */

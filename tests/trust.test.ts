@@ -6,7 +6,7 @@ import { AccessError, DevDatabase } from '@/lib/data/dev-database';
 import { getPreviewDetail, listPreviewCards, listPreviewListings } from '@/lib/data/preview';
 import { toPublicListing } from '@/lib/data/rules';
 import { TRUST_DISCLAIMER, buildTrustEvidence } from '@/lib/data/trust';
-import { AVAILABILITY_LABEL, ROLE_LABEL, brokerFeeNote, compactLocation, confirmedLabel, isStillAvailable } from '@/lib/format';
+import { AVAILABILITY_LABEL, AVAILABILITY_SHORT, ROLE_LABEL, brokerFeeNote, compactLocation, confirmedLabel, confirmedShort, isStillAvailable } from '@/lib/format';
 import { distanceMeters, googleMapsLink, osmEmbedUrl, osmLink } from '@/lib/location/geo';
 import { MAX_OFFSET_M, MIN_OFFSET_M, approximateLocation } from '@/lib/location/approximate';
 import { MAX_REPORTED, addReportedId, isListingId, parseReportedIds } from '@/lib/reporting/reported';
@@ -325,5 +325,33 @@ describe('compact location for list cards', () => {
   it('keeps only the kecamatan when no region part is present, and never returns more than two parts', () => {
     expect(compactLocation('Gejayan, Kec. Depok')).toBe('Kec. Depok');
     expect(compactLocation('A, B, C, D, E').split(', ').length).toBeLessThanOrEqual(2);
+  });
+});
+
+describe('one-line status for list cards', () => {
+  it.each([
+    [null, null],
+    ['2026-10-25T00:00:00Z', 'hari ini'],
+    ['2026-10-24T00:00:00Z', 'kemarin'],
+    ['2026-10-20T00:00:00Z', '5 hari lalu'],
+    ['2026-09-25T00:00:00Z', '30 hari lalu'],
+    ['2026-09-24T00:00:00Z', '1 bulan lalu'],
+    ['2026-11-01T00:00:00Z', 'hari ini'],
+  ])('confirmedShort(%s)', (iso, expected) => expect(confirmedShort(iso, NOW)).toBe(expected));
+
+  it('is always the long label without its "Dikonfirmasi " prefix', () => {
+    for (const iso of ['2026-10-25T00:00:00Z', '2026-10-20T00:00:00Z', '2026-08-10T00:00:00Z']) {
+      expect(`Dikonfirmasi ${confirmedShort(iso, NOW)}`).toBe(confirmedLabel(iso, NOW));
+    }
+  });
+
+  it('keeps short availability wording honest: unknown never reads as available', () => {
+    expect(AVAILABILITY_SHORT).toEqual({ available: 'Tersedia', limited: 'Tersisa sedikit', unavailable: 'Tidak tersedia', unknown: 'Belum pasti' });
+    expect(AVAILABILITY_SHORT.unknown).not.toMatch(/^Tersedia/);
+    for (const key of Object.keys(AVAILABILITY_SHORT) as (keyof typeof AVAILABILITY_SHORT)[]) expect(AVAILABILITY_SHORT[key].length).toBeLessThanOrEqual(AVAILABILITY_LABEL[key].length);
+  });
+
+  it('every card carries the short age (null only without a confirmation date)', () => {
+    for (const card of listPreviewCards(NOW)) expect(card.confirmed_short).toBe(confirmedShort(card.last_confirmed_at, NOW));
   });
 });

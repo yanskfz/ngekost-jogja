@@ -1,7 +1,7 @@
 import { buildDummyData } from '@/data/dummy-listings';
 import { buildTrustEvidence, type TrustItem } from '@/lib/data/trust';
 import { isPubliclyVisible, toPublicListing } from '@/lib/data/rules';
-import { confirmedLabel } from '@/lib/format';
+import { confirmedLabel, confirmedShort } from '@/lib/format';
 import type { PublicListing } from '@/lib/data/types';
 import type { ListingCardData } from '@/lib/search/listings';
 
@@ -25,7 +25,7 @@ export function listPreviewCards(now: Date = new Date(), excludeIds: readonly st
     .filter((l) => isPubliclyVisible(l, now) && !excludeIds.includes(l.id))
     .map((l) => {
       const { contact_whatsapp: _w, contact_name: _n, ...card } = toPublicListing(l);
-      return { ...card, evidence: evidenceFor(data, l.id), confirmed_label: confirmedLabel(l.last_confirmed_at, now) };
+      return { ...card, evidence: evidenceFor(data, l.id), confirmed_label: confirmedLabel(l.last_confirmed_at, now), confirmed_short: confirmedShort(l.last_confirmed_at, now) };
     });
 }
 

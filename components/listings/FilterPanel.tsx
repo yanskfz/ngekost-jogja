@@ -45,14 +45,6 @@ export function FilterPanel({ query }: { query: ListingQuery }) {
             ))}
           </div>
         </fieldset>
-        <div className="field">
-          <label htmlFor="f-role">Pemasang iklan</label>
-          <select id="f-role" name="role" defaultValue={query.role ?? ''}>
-            <option value="">Pemilik dan agen</option>
-            <option value="owner">Pemilik</option>
-            <option value="broker">Agen</option>
-          </select>
-        </div>
         <label className="check check--solo">
           <input type="checkbox" name="avail" value="1" defaultChecked={query.avail} /> Hanya yang masih tersedia
         </label>

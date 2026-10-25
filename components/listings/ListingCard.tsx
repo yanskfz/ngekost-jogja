@@ -1,10 +1,10 @@
 import Link from 'next/link';
-import { CalendarCheck, ChevronRight, MapPin, Navigation } from 'lucide-react';
+import { ChevronRight, MapPin, Navigation } from 'lucide-react';
 import { FacilityIcon } from '@/components/listings/facility-icon';
 import { FavoriteButton } from '@/components/listings/FavoriteButton';
 import { listingPhoto } from '@/components/listings/photos';
 import { TrustRow } from '@/components/listings/TrustBadges';
-import { AVAILABILITY_LABEL, ROLE_LABEL, brokerFeeNote, compactLocation, formatRupiah } from '@/lib/format';
+import { AVAILABILITY_LABEL, AVAILABILITY_SHORT, ROLE_LABEL, brokerFeeNote, compactLocation, formatRupiah } from '@/lib/format';
 import { areaLabel, type ListingCardData } from '@/lib/search/listings';
 
 export function ListingCard({ listing, priority = false, distanceLabel }: { listing: ListingCardData; priority?: boolean; distanceLabel?: string }) {
@@ -60,10 +60,13 @@ export function ListingCard({ listing, priority = false, distanceLabel }: { list
             <span className="sr-only">{listing.neighborhood_label}</span>
           </p>
           <TrustRow items={listing.evidence} />
-          <p className="card__status">
-            <span className={`avail avail--${availabilityClass}`}>{AVAILABILITY_LABEL[listing.availability]}</span>
-            <span className="card__confirmed">
-              <CalendarCheck size={12} aria-hidden="true" /> {listing.confirmed_label}
+          <p className="card__status" title={`${AVAILABILITY_LABEL[listing.availability]}. ${listing.confirmed_label}`}>
+            <span className="card__status-text" aria-hidden="true">
+              <span className={`avail avail--${availabilityClass}`}>{AVAILABILITY_SHORT[listing.availability]}</span>
+              {listing.confirmed_short ? ` · ${listing.confirmed_short}` : ''}
+            </span>
+            <span className="sr-only">
+              {AVAILABILITY_LABEL[listing.availability]}. {listing.confirmed_label}.
             </span>
           </p>
           {fee ? <p className={`card__fee card__fee--${fee.tone}`}>{fee.text}</p> : null}

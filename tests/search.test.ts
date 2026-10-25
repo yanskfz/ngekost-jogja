@@ -71,15 +71,16 @@ describe('expanded filters', () => {
     expect(ids(filterListings(all, { fac: ['ac', 'parkir'] }))).toEqual([]);
     expect(facilityKeysOf(['1 kamar', 'WiFi', 'Carport'])).toEqual(['wifi', 'parkir']);
   });
-  it('filters by role', () => {
-    expect(ids(filterListings(all, { role: 'owner' }))).toEqual([NUM(1), NUM(3)]);
-    expect(ids(filterListings(all, { role: 'broker' }))).toEqual([NUM(2), NUM(9), NUM(10)]);
+  it('has no role filter: a role parameter never changes the results', () => {
+    expect((parseListingQuery({ role: 'broker' }) as Record<string, unknown>).role).toBeUndefined();
+    expect(ids(filterListings(all, parseListingQuery({ role: 'broker' })))).toEqual(ids(all));
+    expect(toQueryString(parseListingQuery({ role: 'owner', price: 'lt1' }))).toBe('/?price=lt1');
   });
   it('"masih tersedia" excludes unknown and unavailable listings', () => {
     expect(ids(filterListings(all, { avail: true }))).toEqual([NUM(1), NUM(3), NUM(9)]);
   });
   it('combines every filter and the text query', () => {
-    expect(ids(filterListings(all, { type: 'kost', area: 'sleman', price: 'lt1', fac: ['wifi'], role: 'broker', avail: true, q: 'cempaka' }))).toEqual([NUM(9)]);
+    expect(ids(filterListings(all, { type: 'kost', area: 'sleman', price: 'lt1', fac: ['wifi'], avail: true, q: 'cempaka' }))).toEqual([NUM(9)]);
     expect(ids(filterListings(all, { type: 'kontrakan', avail: true }))).toEqual([]);
   });
   it('matches the manual area search against neighborhood labels', () => {
@@ -89,7 +90,7 @@ describe('expanded filters', () => {
   });
   it('never lets a filter surface a listing the anonymous gate withheld', () => {
     const { allowed } = gateListings(all, false);
-    expect(ids(filterListings(allowed, { role: 'broker' }))).toEqual([NUM(2)]);
+    expect(ids(filterListings(allowed, { fac: ['parkir'] }))).toEqual([NUM(2)]);
     expect(ids(filterListings(allowed, { price: 'lt1' }))).toEqual([]);
   });
 });
@@ -120,10 +121,10 @@ describe('sorting', () => {
 describe('query parsing and url round trip', () => {
   it('ignores invalid values and de-duplicates facilities', () => {
     const q = parseListingQuery({ price: 'cheap', role: 'admin', avail: '2', sort: 'rating', fac: ['wifi', 'bogus', 'wifi,ac'] });
-    expect(q).toEqual({ q: undefined, type: undefined, area: undefined, price: undefined, fac: ['wifi', 'ac'], role: undefined, avail: undefined, sort: undefined });
+    expect(q).toEqual({ q: undefined, type: undefined, area: undefined, price: undefined, fac: ['wifi', 'ac'], avail: undefined, sort: undefined });
   });
   it('round-trips every parameter', () => {
-    const query = { q: 'depok', type: 'kost' as const, area: 'sleman' as const, price: '1to2' as const, fac: ['wifi' as const, 'ac' as const], role: 'broker' as const, avail: true, sort: 'price_asc' as const };
+    const query = { q: 'depok', type: 'kost' as const, area: 'sleman' as const, price: '1to2' as const, fac: ['wifi' as const, 'ac' as const], avail: true, sort: 'price_asc' as const };
     const url = new URL('http://x' + toQueryString(query));
     const params: Record<string, string | string[]> = {};
     for (const key of new Set(url.searchParams.keys())) {
