@@ -177,6 +177,18 @@ The product must:
 - Asset acceptance: no unintended color collision, overlap, clipping, or unclear boundary between a sliced asset and its parent surface. Listing cards must not clip price, metadata, CTA, or image at mobile width.
 - Every scenario is recorded as PASS, FAIL, or BLOCKED with evidence and severity/priority. P0 means security/data exposure or app unavailable; P1 means core journey broken or content clipped; P2 means meaningful visual/accessibility/coverage issue; P3 is polish.
 
+
+
+### Living regression requirement
+
+Testcases must improve continuously during implementation and QA:
+
+- Every discovered bug becomes a deterministic regression test before the fix is accepted.
+- The test must fail before the fix and pass after it.
+- Keep prior coverage; do not delete a test unless the requirement is removed or replaced and the reason is documented.
+- Update `design-qa.md` with the reproduction, testcase, result, severity/priority, and residual risk.
+- Re-run targeted regression tests after each fix, followed by the full E2E suite.
+
 ## Done when
 
 - [x] Product scope, non-goals, trust policy, and moderation checklist are approved.
