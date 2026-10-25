@@ -3,10 +3,15 @@ import { ArrowRight, ChevronRight, Search } from 'lucide-react';
 import { Header } from '@/components/site/Header';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { AntiScamWarning } from '@/components/trust/AntiScamWarning';
+import { ListingGate } from '@/components/trust/ListingGate';
+import { isDemoSignedIn } from '@/lib/auth/demo-session';
+import { gateListings } from '@/lib/data/access';
 import { listPreviewCards } from '@/lib/data/preview';
 import { areaLabel, filterListings, parseListingQuery, toQueryString, type ListingQuery } from '@/lib/search/listings';
 
 // Evaluate expiry per request so dummy listings never look stale.
+import { consentMissing } from '@/lib/safety/consent';
+
 export const dynamic = 'force-dynamic';
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
@@ -20,9 +25,11 @@ function Chip({ label, href, active }: { label: string; href: string; active: bo
 }
 
 export default async function HomePage({ searchParams }: Props) {
+  if (await consentMissing()) return null;
   const query = parseListingQuery(await searchParams);
-  const all = listPreviewCards();
-  const results = filterListings(all, query);
+  // The anonymous limit is applied to the global public set first, then search/filters run on what is allowed.
+  const { allowed, lockedCount } = gateListings(listPreviewCards(), await isDemoSignedIn());
+  const results = filterListings(allowed, query);
   const filtered = Boolean(query.q || query.type || query.area);
   const withQuery = (patch: Partial<ListingQuery>) => `${toQueryString({ ...query, ...patch })}#listing`;
 
@@ -143,6 +150,7 @@ export default async function HomePage({ searchParams }: Props) {
               </Link>
             </div>
           )}
+          {lockedCount > 0 ? <ListingGate lockedCount={lockedCount} /> : null}
         </section>
 
         <AntiScamWarning id="keamanan" />

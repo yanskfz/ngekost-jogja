@@ -4,16 +4,39 @@ import { ArrowLeft, MapPin, MessageCircle } from 'lucide-react';
 import { Header } from '@/components/site/Header';
 import { FacilityIcon } from '@/components/listings/facility-icon';
 import { AntiScamWarning } from '@/components/trust/AntiScamWarning';
-import { getPreviewDetail } from '@/lib/data/preview';
+import { isDemoSignedIn } from '@/lib/auth/demo-session';
+import { canViewListing } from '@/lib/data/access';
+import { getPreviewDetail, listPreviewCards } from '@/lib/data/preview';
+import { ListingGate } from '@/components/trust/ListingGate';
 import { LISTING_PHOTOS } from '@/components/listings/photos';
 import { areaLabel } from '@/lib/search/listings';
+
+import { consentMissing } from '@/lib/safety/consent';
 
 export const dynamic = 'force-dynamic';
 
 const rupiah = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
 
 export default async function ListingPage({ params }: { params: Promise<{ id: string }> }) {
+  if (await consentMissing()) return null;
   const { id } = await params;
+  const publicListings = listPreviewCards();
+  if (!publicListings.some((l) => l.id === id)) notFound();
+  // Server-side gate: a locked listing's data is never read, so direct URLs cannot expose it.
+  if (!canViewListing(publicListings, id, await isDemoSignedIn())) {
+    return (
+      <>
+        <Header />
+        <main className="detail">
+          <Link href="/#listing" className="back">
+            <ArrowLeft size={18} aria-hidden="true" /> Kembali
+          </Link>
+          <h1>Listing ini terkunci</h1>
+          <ListingGate lockedCount={1} />
+        </main>
+      </>
+    );
+  }
   const detail = getPreviewDetail(id);
   if (!detail) notFound();
   const { listing, contactWhatsapp, imageCount } = detail;

@@ -8,7 +8,7 @@ const cards = listPreviewCards(NOW);
 describe('search and filters', () => {
   it('matches text across title and address, case-insensitively', () => {
     expect(filterListings(cards, { q: 'TIMOHO' }).map((l) => l.id)).toEqual(['lst-1']);
-    expect(filterListings(cards, { q: 'kota jogja' }).map((l) => l.id)).toEqual(['lst-1', 'lst-3']);
+    expect(filterListings(cards, { q: 'kota jogja' }).map((l) => l.id)).toEqual(['lst-1', 'lst-3', 'lst-10']);
     expect(filterListings(cards, { q: 'zzz' })).toEqual([]);
   });
 

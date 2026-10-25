@@ -1,18 +1,14 @@
 import Link from 'next/link';
 import { Menu } from 'lucide-react';
+import { demoSignOut } from '@/app/actions';
+import { BrandLink } from '@/components/site/BrandBar';
+import { isDemoSignedIn } from '@/lib/auth/demo-session';
 
-export function Header() {
+export async function Header() {
+  const signedIn = await isDemoSignedIn();
   return (
     <header className="header">
-      <Link href="/" className="brand">
-        <img className="brand__logo" src="/images/logo.webp" alt="" width={98} height={68} />
-        <span className="brand__text">
-          <span className="brand__name">
-            Ngekost <span>Jogja</span>
-          </span>
-          <span className="brand__tag">Cari kost &amp; kontrakan jadi lebih aman</span>
-        </span>
-      </Link>
+      <BrandLink />
       <details className="menu">
         <summary aria-label="Menu">
           <Menu size={30} aria-hidden="true" />
@@ -22,6 +18,13 @@ export function Header() {
           <Link href="/?type=kost#listing">Cari Kost</Link>
           <Link href="/?type=kontrakan#listing">Cari Kontrakan</Link>
           <Link href="/#keamanan">Tips keamanan</Link>
+          {signedIn ? (
+            <form action={demoSignOut}>
+              <button type="submit">Keluar (demo)</button>
+            </form>
+          ) : (
+            <Link href="/masuk">Masuk / Daftar (demo)</Link>
+          )}
         </nav>
       </details>
     </header>

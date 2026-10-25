@@ -13,7 +13,7 @@ export function AntiScamWarning({ id }: { id?: string }) {
         </p>
         <p className="warning__fine">Ngekost Jogja tidak meminta atau memproses pembayaran dan tidak menjamin transaksi.</p>
       </div>
-      <img className="warning__art" src="/images/warning-girl.webp" alt="" width={161} height={174} loading="lazy" decoding="async" />
+      <img className="warning__art" src="/images/warning-girl.webp" alt="" width={331} height={370} loading="lazy" decoding="async" />
     </section>
   );
 }

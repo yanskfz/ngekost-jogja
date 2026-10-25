@@ -37,3 +37,11 @@ Before enabling public submissions or public moderation, complete all of the fol
 - Confirm no transfer/payment messaging or UI implies that Ngekost guarantees a transaction.
 - Complete independent review, QA, and read-only deployment verification.
 - Only then enable owner/broker submissions and admin moderation in production.
+
+## Safety consent and anonymous access (replace preview behavior)
+
+The preview stores safety consent in an HttpOnly cookie and "signs in" with a demo cookie. Before public launch:
+
+- Record safety consent with timestamp, consent text version, and account or session identifier on the server.
+- Replace the demo cookie with real authentication; enforce the anonymous limit (3 complete listings, remaining listings locked) in the query layer or row-level policy, never only in the UI.
+- Keep the contact-point warning at the WhatsApp action even after consent.

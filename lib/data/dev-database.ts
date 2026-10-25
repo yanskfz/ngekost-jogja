@@ -72,13 +72,13 @@ export class DevDatabase {
   /** Public read path: approved, non-expired listings only, without private columns. */
   listPublicListings(now: Date = new Date()): PublicListing[] {
     const rows = this.db
-      .prepare("SELECT * FROM listings WHERE status = 'approved' AND expires_at IS NOT NULL AND expires_at > ? ORDER BY created_at, id")
+      .prepare("SELECT * FROM listings WHERE status = 'approved' AND expires_at IS NOT NULL AND expires_at > ? ORDER BY rowid")
       .all(now.toISOString());
     return rows.map(toListing).filter((l) => isPubliclyVisible(l, now)).map(toPublicListing);
   }
 
   listSubmitterListings(accountId: string): Listing[] {
-    return this.db.prepare('SELECT * FROM listings WHERE owner_id = ? ORDER BY created_at, id').all(accountId).map(toListing);
+    return this.db.prepare('SELECT * FROM listings WHERE owner_id = ? ORDER BY rowid').all(accountId).map(toListing);
   }
 
   /** Returns undefined when the listing does not exist or belongs to someone else (no existence leak). */
