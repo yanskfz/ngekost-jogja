@@ -115,7 +115,7 @@ function cardIntegrity(page) {
         if (r.width === 0 || r.height === 0) return;
         const tag = `${el.tagName.toLowerCase()}.${String(el.className).split(' ')[0]}`;
         if (r.left < cr.left - 1 || r.right > cr.right + 1 || r.top < cr.top - 1 || r.bottom > cr.bottom + 1) problems.push(`card${i} ${tag} leaves card`);
-        if (/title|address|price|body|facilities/.test(String(el.className)) && el.scrollWidth > el.clientWidth + 1) problems.push(`card${i} ${tag} text overflows (${el.scrollWidth}>${el.clientWidth})`);
+        if (/title|price|body|facilities/.test(String(el.className)) && el.scrollWidth > el.clientWidth + 1) problems.push(`card${i} ${tag} text overflows (${el.scrollWidth}>${el.clientWidth})`);
       });
       for (const sel of ['.card__title', '.card__price', '.card__photo', '.card__chevron']) {
         const el = card.querySelector(sel);
@@ -385,6 +385,30 @@ try {
     await shot(p, '10-cards-evidence-390.png', p.locator('.cards'));
     const tt = await smallTargets(p);
     record('Touch targets on the filtered homepage (filter panel, location button, chips) are ~44px', tt.length === 0, tt.map((s) => `${s.t}:${s.h}`).join(', '), 'P2');
+    await p.context().close();
+  }
+
+  // --- list card address: one line max, with an ellipsis, showing kecamatan and region
+  {
+    const p = await newPage();
+    await p.goto(BASE);
+    const addr = (id) => p.locator(`[data-listing-id="${id}"] .card__address`);
+    const shown = {};
+    for (const id of ['lst-1', 'lst-2', 'lst-3']) shown[id] = (await addr(id).locator('.card__address-text').innerText()).trim();
+    record('Card address: shows kecamatan and region only', shown['lst-1'] === 'Kec. Umbulharjo, Kota Jogja' && shown['lst-2'] === 'Kec. Sleman, Kab. Sleman' && shown['lst-3'] === 'Kec. Gondokusuman, Kota Jogja', JSON.stringify(shown), 'P1');
+    record('Card address: the full neighborhood label stays available as a tooltip and in the page text for assistive tech', (await addr('lst-1').getAttribute('title')) === 'Timoho, Kec. Umbulharjo, Kota Jogja' && /Timoho/.test(await addr('lst-1').evaluate((e) => e.textContent ?? '')) , '', 'P2');
+    const oneLine = await p.locator('.card__address-text').evaluateAll((els) => els.map((e) => { const cs = getComputedStyle(e); return { lines: Math.round(e.getBoundingClientRect().height / parseFloat(cs.lineHeight)), nowrap: cs.whiteSpace === 'nowrap', ellipsis: cs.textOverflow === 'ellipsis' }; }));
+    record('Card address: exactly one line with an ellipsis rule on every card', oneLine.length === 3 && oneLine.every((o) => o.lines === 1 && o.nowrap && o.ellipsis), JSON.stringify(oneLine), 'P1');
+    await p.goto(`${BASE}/listing/lst-1`);
+    record('Detail keeps the full neighborhood label', /Timoho, Kec\. Umbulharjo, Kota Jogja/.test(await p.locator('main').innerText()), '', 'P2');
+    const q = await newPage();
+    await q.goto(`${BASE}/qa/cards`);
+    const stress = await q.locator('.card__address').evaluateAll((els) => els.map((e) => { const t = e.querySelector('.card__address-text'); const cs = getComputedStyle(t); return { text: t.textContent.trim(), lines: Math.round(t.getBoundingClientRect().height / parseFloat(cs.lineHeight)), clipped: t.scrollWidth > t.clientWidth, full: e.getAttribute('title') }; }));
+    record('Card address (stress): the 160-character address becomes "Kec. Depok, Kab. Sleman" on one line', stress[2].text === 'Kec. Depok, Kab. Sleman' && stress[2].lines === 1 && /RT 04 RW 09/.test(stress[2].full), JSON.stringify(stress[2]).slice(0, 160), 'P1');
+    record('Card address (stress): an unbroken 100-character string is cut with an ellipsis on one line, not wrapped', stress[1].lines === 1 && stress[1].clipped && /PanjangTanpaSpasi/.test(stress[1].full), '', 'P1');
+    record('Card address (stress): every stress card keeps its address to one line', stress.every((s) => s.lines === 1), stress.map((s) => s.lines).join(','), 'P1');
+    await shot(q, '16-stress-cards-address-390.png', q.locator('.cards'));
+    await q.context().close();
     await p.context().close();
   }
 

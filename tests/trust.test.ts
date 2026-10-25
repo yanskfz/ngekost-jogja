@@ -6,7 +6,7 @@ import { AccessError, DevDatabase } from '@/lib/data/dev-database';
 import { getPreviewDetail, listPreviewCards, listPreviewListings } from '@/lib/data/preview';
 import { toPublicListing } from '@/lib/data/rules';
 import { TRUST_DISCLAIMER, buildTrustEvidence } from '@/lib/data/trust';
-import { AVAILABILITY_LABEL, ROLE_LABEL, brokerFeeNote, confirmedLabel, isStillAvailable } from '@/lib/format';
+import { AVAILABILITY_LABEL, ROLE_LABEL, brokerFeeNote, compactLocation, confirmedLabel, isStillAvailable } from '@/lib/format';
 import { distanceMeters, googleMapsLink, osmEmbedUrl, osmLink } from '@/lib/location/geo';
 import { MAX_OFFSET_M, MIN_OFFSET_M, approximateLocation } from '@/lib/location/approximate';
 import { MAX_REPORTED, addReportedId, isListingId, parseReportedIds } from '@/lib/reporting/reported';
@@ -300,5 +300,29 @@ describe('funnel events', () => {
     expect(JSON.parse(spy.mock.calls[0][0])).toEqual({ type: 'nk_event', name: 'consent_accepted', viewport: 'sm', at: NOW.toISOString() });
     expect(JSON.parse(spy.mock.calls[1][0])).toEqual({ type: 'nk_event', name: 'gate_shown', at: NOW.toISOString() });
     spy.mockRestore();
+  });
+});
+
+describe('compact location for list cards', () => {
+  it.each([
+    ['Timoho, Kec. Umbulharjo, Kota Jogja', 'Kec. Umbulharjo, Kota Jogja'],
+    ['Depok, Kec. Sleman, Kab. Sleman', 'Kec. Sleman, Kab. Sleman'],
+    ['Terban, Kec. Gondokusuman, Kota Jogja', 'Kec. Gondokusuman, Kota Jogja'],
+    ['Condongcatur, Kec. Depok, Kab. Sleman', 'Kec. Depok, Kab. Sleman'],
+    ['Perumahan Contoh Asri Blok C, RT 04 RW 09, Kelurahan Contoh Lor, Kecamatan Depok, Kabupaten Sleman, Daerah Istimewa Yogyakarta 55281', 'Kec. Depok, Kab. Sleman'],
+    ['Kelurahan X, kecamatan mlati, KABUPATEN SLEMAN', 'Kec. mlati, Kab. SLEMAN'],
+  ])('shows kecamatan and region for %s', (label, expected) => expect(compactLocation(label)).toBe(expected));
+
+  it.each([
+    ['Mantrijeron, Kota Jogja', 'Mantrijeron, Kota Jogja'], // no kecamatan given: last two parts
+    ['Pakuncen', 'Pakuncen'], // single part
+    ['Jl.PanjangTanpaSpasi', 'Jl.PanjangTanpaSpasi'],
+    ['', ''],
+    ['  ,  , ', ''],
+  ])('falls back sensibly when there is no kecamatan: %j', (label, expected) => expect(compactLocation(label)).toBe(expected));
+
+  it('keeps only the kecamatan when no region part is present, and never returns more than two parts', () => {
+    expect(compactLocation('Gejayan, Kec. Depok')).toBe('Kec. Depok');
+    expect(compactLocation('A, B, C, D, E').split(', ').length).toBeLessThanOrEqual(2);
   });
 });

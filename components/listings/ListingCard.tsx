@@ -4,7 +4,7 @@ import { FacilityIcon } from '@/components/listings/facility-icon';
 import { FavoriteButton } from '@/components/listings/FavoriteButton';
 import { listingPhoto } from '@/components/listings/photos';
 import { TrustRow } from '@/components/listings/TrustBadges';
-import { AVAILABILITY_LABEL, ROLE_LABEL, brokerFeeNote, formatRupiah } from '@/lib/format';
+import { AVAILABILITY_LABEL, ROLE_LABEL, brokerFeeNote, compactLocation, formatRupiah } from '@/lib/format';
 import { areaLabel, type ListingCardData } from '@/lib/search/listings';
 
 export function ListingCard({ listing, priority = false, distanceLabel }: { listing: ListingCardData; priority?: boolean; distanceLabel?: string }) {
@@ -51,8 +51,12 @@ export function ListingCard({ listing, priority = false, distanceLabel }: { list
           <p className="card__price">
             <span className="card__amount">{formatRupiah(listing.price_monthly)}</span> <span className="card__period">/ {listing.price_period}</span>
           </p>
-          <p className="card__address">
-            <MapPin size={14} aria-hidden="true" /> {listing.neighborhood_label}
+          <p className="card__address" title={listing.neighborhood_label}>
+            <MapPin size={14} aria-hidden="true" />
+            <span className="card__address-text" aria-hidden="true">
+              {compactLocation(listing.neighborhood_label)}
+            </span>
+            <span className="sr-only">{listing.neighborhood_label}</span>
           </p>
           <TrustRow items={listing.evidence} />
           <p className="card__status">

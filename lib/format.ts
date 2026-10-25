@@ -44,3 +44,24 @@ export function brokerFeeNote(role: SubmitterType, status: BrokerFeeStatus, amou
   if (status === 'disclosed' && amount !== null) return { text: `Biaya makelar ${formatRupiah(amount)}. Ngekost Jogja tidak memungut biaya ini`, tone: 'warn' };
   return { text: 'Biaya makelar belum dicantumkan. Tanyakan sebelum survei', tone: 'warn' };
 }
+
+const KEC = /^kec(?:amatan|\.)\s*(\S.*)$/i;
+const REGION = /^(kab(?:upaten|\.)|kota)\s*(\S.*)$/i;
+
+/**
+ * Short, one-line location for list cards: "Kec. Umbulharjo, Kota Jogja". The full neighborhood label stays on the
+ * detail page and in the card's tooltip and screen-reader text. Without a recognizable kecamatan it falls back to the
+ * last two parts, so the result never has more than two parts.
+ */
+export function compactLocation(label: string): string {
+  const parts = label.split(',').map((p) => p.trim()).filter(Boolean);
+  if (parts.length === 0) return '';
+  const kecIndex = parts.findIndex((p) => KEC.test(p));
+  if (kecIndex === -1) return parts.slice(-2).join(', ');
+  const kec = `Kec. ${parts[kecIndex].match(KEC)![1]}`;
+  const regionPart = parts.slice(kecIndex + 1).find((p) => REGION.test(p));
+  if (!regionPart) return kec;
+  const [, kind, name] = regionPart.match(REGION)!;
+  const region = kind.toLowerCase().startsWith('kab') ? `Kab. ${name}` : `Kota ${name}`;
+  return `${kec}, ${region}`;
+}

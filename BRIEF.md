@@ -60,6 +60,7 @@
 - 2026-10-25 — Trust badges may only state checks backed by a stored record, are never worded as a safety guarantee, and show missing checks as "belum" on the detail page.
 - 2026-10-25 — Roles are labelled "Pemilik" and "Agen"; broker fees are stated as declared and never collected by Ngekost Jogja.
 - 2026-10-25 — The anonymous 3-of-5 limit is a fixed launch rule. Consent completion, abandonment, and sign-up conversion are measured; safety consent is not A/B tested yet.
+- 2026-10-25 — List cards show the address on one line (kecamatan and region, ellipsis when too long); the full neighborhood label stays on the detail page. Requested by the Product Owner during the first visual review.
 - 2026-10-25 — The consent modal wording changed, so the consent version is `2026-10-v2` and earlier consent no longer counts.
 
 ## Requirements

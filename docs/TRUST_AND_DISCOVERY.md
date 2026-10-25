@@ -45,6 +45,11 @@ New or changed listing fields: `neighborhood_label` (public), `address` and `map
 9. **Reports in the preview** only hide the listing for the reporter's own browser (cookie) and say so on screen. The hosted product must hide it for everyone and store the report durably.
 10. **Consent modal wording.** The three actions follow the design's lifecycle section (inspect directly, never transfer before viewing, contact only through the displayed channel). The visible text is at most 55 words before the guide is opened.
 
+## Product Owner change after the first visual review
+
+- **List-card address is one line.** Cards show the kecamatan and region only (for example "Kec. Umbulharjo, Kota Jogja"), cut with an ellipsis if it still does not fit. The full neighborhood label stays on the detail page, in the card's tooltip, and in screen-reader text (`compactLocation` in `lib/format.ts`). Labels without a recognizable kecamatan fall back to their last two parts.
+- Other card lines (title, evidence row, status row, fee note) are not capped yet; see the density options in the visual review.
+
 ## Not built (outside the nine additions or blocked by the dummy preview)
 
 - Durable report storage, an admin response SLA, report triage, and per-user/listing/reason deduplication beyond the dev adapter and the cookie.

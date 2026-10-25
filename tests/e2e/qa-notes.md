@@ -20,6 +20,9 @@ Callers of the changed code: `toPublicListing` (every public read path: preview 
 | Report-action 404 probes were attributed to the tracked page and polluted console-error tracking | P3 | E2E failure | 404 checks use untracked requests | FAIL (test setup) | PASS | Test-only. |
 Earlier tests were kept; none was removed or weakened.
 
+## Change request during visual review: one-line card address
+Product Owner asked that list-card addresses be limited to one line with an ellipsis and show the kecamatan and region. Tests were written first and failed (the one-line address element did not exist, so the E2E runner timed out on it; 12 unit cases failed because `compactLocation` was missing). After the change: 12 new unit cases and 8 new E2E checks pass (kecamatan text, one line with an ellipsis on the real and the stress cards, tooltip and screen-reader text keep the full label, the detail page keeps the full label, the 160-character address becomes "Kec. Depok, Kab. Sleman"). The card geometry check no longer treats the intentional ellipsis as overflow; every other overflow check is unchanged. Screenshot: `docs/qa-screenshots/16-stress-cards-address-390.png`.
+
 ## Lighthouse (mobile, localhost production build, single runs)
 - Homepage, consented: Performance 87, Accessibility 100, Best Practices 96; LCP 2.7 s, CLS 0, TBT 380 ms, 200 KiB. Down from 91 before this iteration (the card list became a client component and cards carry more markup); still above the 85 target, with little margin.
 - Detail page (`/listing/lst-2`): Performance 99, Accessibility 100, Best Practices 96.
