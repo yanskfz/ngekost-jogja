@@ -170,3 +170,15 @@ Before declaring E2E green:
 - Authenticated/demo-unlocked state exposes all five listings.
 - Visual asset separation and no clipping are checked with screenshots at 390x844.
 - E2E verifies the above at 390x844 and records results in design-qa.md.
+
+
+### Living regression suite
+
+- The testcase suite is a living product artifact, not a one-time checklist.
+- Every discovered bug must produce a deterministic regression test before the fix is accepted.
+- The regression test must fail against the buggy behavior, pass after the fix, and remain in the suite.
+- Every fix must update the relevant happy-path, edge-case, or negative/security scenario when the behavior affects that category.
+- QA must preserve prior coverage; a test may be removed only when the requirement is explicitly removed or replaced, with the reason recorded in `design-qa.md`.
+- `design-qa.md` must include the bug reproduction, test name or scenario, fix result, and residual risk.
+- Re-run targeted regression tests after each fix, then run the full E2E suite before declaring green.
+- A previously passing test does not close a new visual or security bug unless the new failure mode is explicitly covered.
