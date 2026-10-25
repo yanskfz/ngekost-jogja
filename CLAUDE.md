@@ -29,3 +29,18 @@ Use the smallest suitable Agent OS owner:
 - `deployment-assistant` for read-only preview/deployment checks.
 
 Keep implementation and git content in English. User-facing discussion may be Indonesian.
+
+
+## Karpathy guidelines (mandatory)
+
+The project also uses the `andrej-karpathy-skills` plugin from `multica-ai/andrej-karpathy-skills`.
+
+Before every implementation, review, or refactor:
+
+1. Read and apply the `karpathy-guidelines` skill.
+2. State assumptions and surface ambiguity before changing code.
+3. Prefer the smallest solution that meets the acceptance criteria.
+4. Make surgical changes only; do not refactor unrelated code.
+5. Define verifiable checks and loop until they pass.
+
+If the plugin is unavailable in the current Claude Code session, read the source guidance from the repository before continuing. This is a workflow requirement, not optional style guidance.
