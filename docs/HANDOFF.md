@@ -1,9 +1,11 @@
-# Claude Code Handoff — Task 1 Foundation
+# Claude Code Handoff — Task 2 Development Data
 
 Scope:
-- Implement only Task 1 from IMPLEMENTATION_PLAN.md: foundation and provider setup.
-- Prepare the Vercel-ready application structure and provider boundaries.
-- Do not implement public listing UX, auth flows, database migrations, admin moderation, CSV import, or deployment.
+- Implement only Task 2 from IMPLEMENTATION_PLAN.md.
+- Use non-sensitive dummy listing fixtures for the Vercel preview.
+- Add a local SQLite-compatible development schema/adapter or equivalent local test database.
+- Keep preview flows read-only; do not imply that public submissions, reports, or moderation changes persist.
+- Add docs/PUBLIC_LAUNCH_DATABASE.md and keep it aligned with the public-launch prerequisites.
 
 Owner:
 - Claude Code developer agent.
@@ -12,33 +14,30 @@ Inputs:
 - BRIEF.md
 - IMPLEMENTATION_PLAN.md
 - CLAUDE.md
+- docs/PUBLIC_LAUNCH_DATABASE.md
 - Agent OS plugin from yanskfz/agent-os
-- Existing prototype files are reference material only; preserve or replace them deliberately and document the choice.
 
 Acceptance criteria:
-- The application uses a maintainable Next.js + TypeScript structure suitable for Vercel.
-- Supabase client/server boundaries are isolated behind small modules.
-- OpenStreetMap-compatible map integration has an adapter boundary without committing provider secrets.
-- Environment variables are documented in .env.example and no secrets are committed.
-- The app has documented local start and production build commands.
-- Existing Vercel configuration remains valid or is updated with evidence.
-- A production build completes successfully.
-- No new product scope is implemented in this task.
-- Add or update focused tests only for the foundation behavior.
+- Dummy listings cover approved, pending, hidden, expired, and broker/owner examples without real personal data.
+- Public preview reads only approved and non-expired dummy listings.
+- The development data model represents listings, accounts, images, consents, moderation events, reports, and import batches.
+- Local tests cover status filtering, two-month expiry behavior, and submitter/admin ownership boundaries where feasible.
+- No Supabase credentials are required for the preview or local tests.
+- No persistent public write path is enabled.
+- Production database setup requirements are documented, including migrations, auth, storage, RLS/access rules, backups, Vercel env vars, and go-live checks.
+- Typecheck, tests, and production build pass.
+- Do not start public auth, admin moderation UI, CSV import UI, or production deployment in this task.
 
 Checks already run:
-- Requirements are locked in BRIEF.md.
-- Architecture and risks are documented in Ngekost Jogja System Design.docx.
-- Agent OS settings are enabled in .claude/settings.json.
-- Current demo prototype has not been migrated to production storage.
+- Task 1 PR #1 exists and has implementing-agent checks: audit 0, typecheck pass, tests pass, build pass.
+- Task 1 independent static review found no blocking issue; CI and Vercel preview are not configured/verified.
 
 Output expected:
-- A focused implementation commit or pull request for Task 1.
+- A focused commit or PR update for Task 2 development data and dummy preview.
 - Updated BRIEF.md Status and Next step.
-- A short verification report listing commands actually run and their pass/fail results.
-- Any provider or access blocker recorded as an Open question; do not guess.
+- A short verification report listing commands actually run and results.
+- Any production provider uncertainty recorded as an Open question.
 
 Unresolved:
-- Supabase project URL and keys are not yet available.
-- Final map provider policy/credentials are not configured.
-- Do not deploy production or request payment-related access.
+- Hosted production database/provider is intentionally deferred until the preview data flow is validated.
+- Map tile provider policy/credentials remain a production prerequisite.

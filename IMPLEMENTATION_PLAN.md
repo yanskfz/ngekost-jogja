@@ -5,6 +5,7 @@
 ### In scope
 
 - Replace demo-only browser storage with a maintainable Vercel-ready application foundation.
+- Use non-sensitive dummy fixtures for the Vercel preview; preview submissions are read-only and not presented as persistent.
 - Implement public listing discovery: text search, structured filters, map view, detail pages, and WhatsApp contact.
 - Implement submitter onboarding and own-listing create/edit flow for owner and broker roles.
 - Implement admin moderation, reports, expiry/reconfirmation, consent audit, and CSV import.
@@ -26,11 +27,11 @@
    - Choose and document Next.js + TypeScript structure, Supabase client boundaries, environment variables, and OpenStreetMap-compatible map adapter.
    - Keep secrets out of git and preserve the local demo as a migration reference only.
 
-2. **Database schema and access rules**
-   - Files: supabase/migrations/**, docs/DATA_MODEL.md.
-   - Create accounts, listings, listing_images, consents, moderation_events, reports, and import_batches.
-   - Add status transitions, timestamps, expiry fields, role ownership, and row-level access rules.
-   - Seed only non-sensitive demo fixtures in a development-only path.
+2. **Development data model and public database notes**
+   - Files: data/dummy-listings.*, db/** or drizzle/**, docs/DATA_MODEL.md, docs/PUBLIC_LAUNCH_DATABASE.md.
+   - Define the listing/consent/moderation/report contracts and a local SQLite schema or adapter for development/tests.
+   - Seed only non-sensitive dummy fixtures for the Vercel preview; do not accept persistent public submissions yet.
+   - Document the required hosted database, auth, storage, migrations, backups, RLS/access rules, admin account, and secret environment setup before public launch.
 
 3. **Authentication and submitter workspace**
    - Files: app/auth/**, app/dashboard/**, components/submitter/**, lib/auth/**.
@@ -93,7 +94,7 @@
 
 Outside blockers:
 
-- Supabase project and credentials.
+- Hosted production database/provider, credentials, and migration process before public launch.
 - Map provider/API policy decision.
 - Admin account identity.
 - Vercel project connection.
@@ -110,7 +111,9 @@ Outside blockers:
 
 ### Task 2
 
-- Migrations create every entity in the Data section of BRIEF.md.
+- The development schema/adapter represents every entity in the Data section of BRIEF.md.
+- Vercel preview reads only non-sensitive dummy fixtures and clearly communicates that submissions are not persistent.
+- docs/PUBLIC_LAUNCH_DATABASE.md lists the concrete setup required before public submissions are enabled.
 - Submitters cannot read or mutate another submitter's private records.
 - Public queries can return only approved, non-expired listings.
 - Every moderation and consent mutation has an auditable timestamp.
