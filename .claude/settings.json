@@ -5,9 +5,23 @@
         "source": "github",
         "repo": "yanskfz/agent-os"
       }
+    },
+    "karpathy-skills": {
+      "source": {
+        "source": "github",
+        "repo": "multica-ai/andrej-karpathy-skills"
+      }
+    },
+    "ponytail": {
+      "source": {
+        "source": "github",
+        "repo": "DietrichGebert/ponytail"
+      }
     }
   },
   "enabledPlugins": {
-    "agent-os@yansz-agent-os": true
+    "agent-os@yansz-agent-os": true,
+    "andrej-karpathy-skills@karpathy-skills": true,
+    "ponytail@ponytail": true
   }
 }
