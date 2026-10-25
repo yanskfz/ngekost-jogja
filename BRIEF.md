@@ -2,10 +2,11 @@
 
 ## Status
 
-- Stage: requirements locked; implementation plan ready for approval.
+- Stage: Task 1 (foundation and provider setup) implemented; Task 2 (database schema and access rules) is next.
 - Repository: `yanskfz/ngekost-jogja`, public, default branch `main`.
 - Workflow: Agent OS + Claude Code implementation after plan approval.
 - Hosting direction: Vercel first; Supabase is the recommended production data/auth/storage layer.
+- Task 1 result: Next.js 15 + TypeScript app, `lib/supabase/*` and `lib/map/*` adapters, `.env.example`, `vercel.json` (`framework: nextjs`), tests, `docs/FOUNDATION.md`. Old static demo moved to `prototype/`.
 - Date: 2026-10-25.
 
 ## Open questions
@@ -16,10 +17,12 @@
 - [x] Expiry — hide automatically after 2 months; allow reconfirmation.
 - [x] Admin auth — start with one admin account using email plus WhatsApp reachability verification.
 - [x] WhatsApp verification scope — admin-supervised manual reachability check for MVP; automated OTP is deferred.
+- [ ] Supabase project URL and keys — not available; needed before Task 2 can be applied/verified against a real project.
+- [ ] Map tile provider — the default public OSM tile server is development-only; choose a policy-compliant provider before production.
 
 ## Next step
 
-Review `IMPLEMENTATION_PLAN.md`. After approval, hand off the scoped tasks to Claude Code starting with the foundation/data model task.
+Independent review and QA of Task 1, then hand off Task 2 (database schema and access rules). Task 2 needs a Supabase project; credentials are not yet available.
 
 ## Decisions
 
