@@ -24,6 +24,18 @@ Callers of the changed code: `ListingCard` (home, QA fixture page), `app/globals
 
 Visual audit notes (implementer review of the screenshots): text, prices, facilities, chevron, and photo stay inside every card at 320 and 390 px; long unbroken words wrap instead of clipping; yearly and monthly periods both render; an empty facilities list leaves no gap. Remaining visual judgement (fidelity to the reference, whether the tile outlines are acceptable) is the product owner's approval to give.
 
+## Bug reproduction log (living regression suite)
+Method: the new suite was run against the code from before the fix (`08f338f`, same E2E and the QA-only fixture route) and failed; the same suite passes after the fix.
+
+| Bug | Severity | Regression test (kept in the suite) | Before fix | After fix | Residual risk |
+| --- | --- | --- | --- | --- | --- |
+| Long unbroken words and long addresses overflow the card body (706 px text in a 154–199 px box) and leave the card | P1 | `Card layout: no clipping or overflow at {320,390,768,1024,1440}px` on 7 stress cards | FAIL at all 5 viewports | PASS | Only synthetic worst cases were tried; real user content may differ. |
+| Empty facilities still rendered an empty list element | P2 | `Edge case: card with empty facilities renders no facilities list and no empty gap` | FAIL (`1,1,1,1,1,1,1`) | PASS | None known. |
+| Category/trust/warning images used `mix-blend-mode: multiply` and dissolved into their parent surface | P2 | `Asset blending: ...do not use blend modes that dissolve their boundary` plus `Asset boundary: ... min edge colour distance >= 20` | Blend rule FAILED. The pixel-distance check PASSED on the old code, so by itself it is a weak guard; it is kept because it still catches a tile that matches its parent at the edges. | PASS | Whether the outlined tiles look right is a visual judgement for the product owner. |
+| Prices split mid-number or overflowed at 320 px (`Rp 1.250.000.0 / 00`, 144 px in 140 px) | P1 | `Edge case: price amounts are never split across lines` (390 and 320 px) and the 320 px card-overflow check | Introduced and caught inside this fix cycle (an intermediate `overflow-wrap: anywhere`); it never existed on `main`. The overflow check failed on it (144>140) before the final fix. The split-amount test was added with the fix and was not separately run against that intermediate state. | PASS | Extreme prices beyond Rp 1.25 miliar at 320 px are untested. |
+
+Earlier tests were all kept; none was removed or weakened.
+
 ## Lighthouse (mobile, localhost production build, run once manually)
 - Consented homepage (re-run after the visual fixes): Performance 91, Accessibility 100, Best Practices 96. LCP 2.5 s, CLS 0, TBT 300 ms, 200 KiB.
 - First-visit consent modal: Performance 93, Accessibility 100, Best Practices 96. LCP 2.2 s, CLS 0, TBT 270 ms, 134 KiB.
