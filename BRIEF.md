@@ -44,6 +44,7 @@ Independent review and QA of Tasks 1–2 (evidence so far is from the implementi
 - 2026-10-25 — Requirements and acceptance criteria are locked before Claude Code implementation starts.
 - 2026-10-25 — Vercel preview uses non-sensitive dummy listings and read-only behavior until a hosted production database is configured.
 - 2026-10-25 — SQLite is for local development/tests only; a persistent hosted database is required before public submissions or public moderation.
+- 2026-10-25 — Iteration 2 requires a blocking anti-scam consent modal before browsing, anonymous users see exactly 3 of 5 public listings until signup/login, and Claude Code may only slice/polish committed image references; it may not generate new images.
 
 ## Requirements
 
