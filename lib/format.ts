@@ -41,7 +41,7 @@ export const AVAILABILITY_SHORT: Record<Availability, string> = {
   available: 'Tersedia',
   limited: 'Tersisa sedikit',
   unavailable: 'Tidak tersedia',
-  unknown: 'Belum pasti',
+  unknown: 'Tanya dulu',
 };
 
 /** Whether a listing may be offered under the "masih tersedia" filter. */

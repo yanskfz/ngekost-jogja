@@ -346,7 +346,7 @@ describe('one-line status for list cards', () => {
   });
 
   it('keeps short availability wording honest: unknown never reads as available', () => {
-    expect(AVAILABILITY_SHORT).toEqual({ available: 'Tersedia', limited: 'Tersisa sedikit', unavailable: 'Tidak tersedia', unknown: 'Belum pasti' });
+    expect(AVAILABILITY_SHORT).toEqual({ available: 'Tersedia', limited: 'Tersisa sedikit', unavailable: 'Tidak tersedia', unknown: 'Tanya dulu' });
     expect(AVAILABILITY_SHORT.unknown).not.toMatch(/^Tersedia/);
     for (const key of Object.keys(AVAILABILITY_SHORT) as (keyof typeof AVAILABILITY_SHORT)[]) expect(AVAILABILITY_SHORT[key].length).toBeLessThanOrEqual(AVAILABILITY_LABEL[key].length);
   });

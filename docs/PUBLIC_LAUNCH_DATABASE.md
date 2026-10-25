@@ -50,7 +50,7 @@ The preview stores safety consent in an HttpOnly cookie and "signs in" with a de
 
 - Provision `LOCATION_JITTER_SECRET` (server-only, per environment, never committed). The development fallback must not be used with real listings.
 - Store exact address and coordinates only in private columns/tables; expose only the approximate point and neighborhood label through the public read model, and cover that with a test against the hosted schema.
-- Make reports durable and hide the reported listing for everyone immediately; define the admin response SLA, deduplicate reports per reporter, listing, and reason window, and keep an audit event.
+- Make reports durable and hide the reported listing for everyone immediately; send an email notification to the admin's Gmail for every new report (response SLA: as soon as possible, reviewed by the admin), deduplicate reports per reporter, listing, and reason window, and keep an audit event.
 - Make `reconfirm` idempotent so a retry cannot extend expiry twice.
 - Add near-duplicate photo detection or mandatory admin review of the three photos before approval.
 - Replace the stdout event log with a reviewed analytics sink, define retention, and keep events free of personal data.

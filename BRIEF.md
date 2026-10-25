@@ -22,11 +22,11 @@
 - [x] Expiry — hide automatically after 2 months; allow reconfirmation.
 - [x] Admin auth — start with one admin account using email plus WhatsApp reachability verification.
 - [x] WhatsApp verification scope — admin-supervised manual reachability check for MVP; automated OTP is deferred.
-- [ ] Report response SLA — the design requires an admin response SLA before launch; no value was given, so the preview states none.
+- [x] Report response SLA — Product Owner decision (2026-10-25): "as soon as possible" with an email notification to the admin's Gmail on every new report; the admin reviews reports. No numeric hour value; the preview states none because reports are not durable and no notification exists yet. The notification is a public-launch requirement (needs durable reports and an email sender); see `docs/PUBLIC_LAUNCH_DATABASE.md`.
 - [ ] Broker "relationship" disclosure — the design says brokers must disclose any fee or relationship; only the fee (none / disclosed amount / undisclosed) is modelled, and the Product Owner has decided that "no fee" and the role are not shown (see Decisions).
 - [x] Role filter — removed (Product Owner decision).
 - [x] Dummy photos — three photos per dummy listing are crops of one reference image (F1); accepted as labelled samples (Product Owner decision). Real distinct photos are still needed before any real listing.
-- [ ] Short availability wording on cards — unknown availability reads "Belum pasti" on one-line cards (the approved "Ketersediaan belum dikonfirmasi" does not fit on phones up to 375 px); confirm or choose another short form.
+- [x] Short availability wording on cards — Product Owner decision (2026-10-25): unknown availability reads "Tanya dulu" on one-line cards (the approved "Ketersediaan belum dikonfirmasi" does not fit on phones up to 375 px). The detail page keeps the full wording.
 - [ ] Price bands and sort options — below Rp 1 jt / Rp 1–2 jt / above Rp 2 jt per month (yearly kontrakan converted to monthly) and the four sort options were chosen by the implementer; confirm or replace.
 - [ ] Availability `unknown` on approved listings — allowed in the dummy data (labelled "Ketersediaan belum dikonfirmasi"); decide whether admin approval should require a known value.
 - [ ] Homepage copy — hero and trust-card wording were changed away from "dari pemilik langsung" and "terverifikasi" (the design flags both); confirm the new wording.

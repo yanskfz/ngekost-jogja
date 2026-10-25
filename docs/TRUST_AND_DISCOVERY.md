@@ -10,7 +10,7 @@ The Product Owner approved nine UI additions. The Vercel preview stays dummy/rea
 | # | Addition | Where | Notes |
 | --- | --- | --- | --- |
 | 1 | Trust evidence row/badge | `components/listings/TrustBadges.tsx`, `lib/data/trust.ts` | Cards show only checks that passed. The detail page lists all five checks, marks missing ones "belum", and states it is not a safety guarantee. |
-| 2 | Last-confirmed date and availability | `lib/format.ts`, card status line, detail status panel | Four availability values; on the detail page `unknown` reads "Ketersediaan belum dikonfirmasi", never "Tersedia". List cards merge availability and age into one line ("Tersedia · 10 hari lalu") using short wording; unknown shows "Belum pasti" because the full label does not fit on phones up to 375 px. The full wording stays in the tooltip and screen-reader text. |
+| 2 | Last-confirmed date and availability | `lib/format.ts`, card status line, detail status panel | Four availability values; on the detail page `unknown` reads "Ketersediaan belum dikonfirmasi", never "Tersedia". List cards merge availability and age into one line ("Tersedia · 10 hari lalu") using short wording; unknown shows "Tanya dulu" because the full label does not fit on phones up to 375 px. The full wording stays in the tooltip and screen-reader text. |
 | 3 | Approximate map preview and Open in Maps | `lib/location/*`, `components/listings/ApproxMap.tsx` | See "Location privacy". |
 | 4 | Role badge and broker-fee transparency (narrowed by the Product Owner) | `lib/format.ts` (`brokerFeeNote`), cards, detail | Shown only when there is a fee or the fee is not stated: then the card and detail show "Agen" plus the fee note. Owner listings and agen listings with no fee show neither the role nor any "no fee" text. The role is still stored and visible to admins. |
 | 5 | Report listing flow | `app/listing/[id]/laporkan`, `submitReport`, `lib/reporting/*` | Demo model: hides the listing for the reporter's browser only. |
@@ -58,7 +58,7 @@ The Product Owner decided that "no broker fee" needs no mention and that the rol
 
 - The role filter ("Pemasang iklan") was removed.
 - Dummy photos: accepted as labelled sample crops (the note on the detail gallery). Real distinct photos are still required before any real listing.
-- Availability and the confirmation age share one line on list cards. Short card wording: Tersedia, Tersisa sedikit, Tidak tersedia, **Belum pasti** (unknown). "Belum pasti" is the implementer's shortening of the approved label and needs confirmation.
+- Availability and the confirmation age share one line on list cards. Short card wording: Tersedia, Tersisa sedikit, Tidak tersedia, **Tanya dulu** (unknown). "Tanya dulu" was chosen by the Product Owner as the short form of the approved label.
 
 ## Independent QA findings F1-F6 (handled)
 
@@ -74,7 +74,7 @@ The Product Owner decided that "no broker fee" needs no mention and that the rol
 
 ## Not built (outside the nine additions or blocked by the dummy preview)
 
-- Durable report storage, an admin response SLA, report triage, and per-user/listing/reason deduplication beyond the dev adapter and the cookie.
+- Durable report storage, the admin response SLA (decided: as soon as possible, with a Gmail notification to the admin on each report; not built), report triage, and per-user/listing/reason deduplication beyond the dev adapter and the cookie.
 - Idempotent reconfirmation (`reconfirm` still extends the expiry each time it is applied).
 - Perceptual or near-duplicate photo detection and any image analysis; only exact duplicate files and basic type/size rules are checked.
 - Filter-to-detail and detail-to-WhatsApp click metrics (the design marks them "recommended").

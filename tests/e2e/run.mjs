@@ -378,7 +378,7 @@ try {
     const s1 = await st('lst-1'), s2 = await st('lst-2'), s3 = await st('lst-3');
     const st1 = async (id) => (await card(id).locator('.card__status-text').innerText()).replace(/\s+/g, ' ').trim();
     const t1 = await st1('lst-1'), t2 = await st1('lst-2'), t3 = await st1('lst-3');
-    record('Freshness and availability share one short line on every card', t1 === 'Tersedia · 10 hari lalu' && t2 === 'Belum pasti · 30 hari lalu' && t3 === 'Tersisa sedikit · 1 bulan lalu', `${t1} | ${t2} | ${t3}`, 'P1');
+    record('Freshness and availability share one short line on every card', t1 === 'Tersedia · 10 hari lalu' && t2 === 'Tanya dulu · 30 hari lalu' && t3 === 'Tersisa sedikit · 1 bulan lalu', `${t1} | ${t2} | ${t3}`, 'P1');
     const lines = await p.locator('.card__status').evaluateAll((els) => els.map((e) => { const t = e.querySelector('.card__status-text'); const cs = getComputedStyle(t); return { lines: Math.round(t.getBoundingClientRect().height / parseFloat(cs.lineHeight)), clipped: t.scrollWidth > t.clientWidth, nowrap: cs.whiteSpace === 'nowrap' }; }));
     record('Status line: exactly one line, not clipped at 390px for the three real cards', lines.length === 3 && lines.every((l) => l.lines === 1 && l.nowrap && !l.clipped), JSON.stringify(lines), 'P1');
     const full = (await card('lst-2').locator('.card__status').evaluate((e) => e.textContent ?? '')).replace(/\s+/g, ' ');
